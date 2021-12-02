@@ -12,7 +12,6 @@ export class AppComponent {
   constructor() {}
 
   public doStuff = (): void => {
-    // fuck spikermann
     let bla = 'hey';
     const bla: number = '';
   };
