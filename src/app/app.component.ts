@@ -1,18 +1,17 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
+	selector: 'app-root',
+	templateUrl: './app.component.html',
 })
 export class AppComponent {
-  title = 'process-change-visualizer';
+	title = 'process-change-visualizer';
 
-  public fifo: number = 5;
+	public fifo: number = 5;
 
-  constructor() {}
+	constructor() { }
 
-  public doStuff = (): void => {
-    let bla = 'hey';
-    const bla: number = '';
-  };
+	public doStuff = (): void => {
+		let bla = 'hey';
+	};
 }

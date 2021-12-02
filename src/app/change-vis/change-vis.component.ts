@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Options, Data } from 'vis-network';
+import { Options, Data, DataSetNodes } from 'vis-network';
 import { Network } from "vis-network/peer/esm/vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data"
 
