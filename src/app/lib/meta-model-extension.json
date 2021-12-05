@@ -1,0 +1,23 @@
+{
+	"name": "ChangeTracking",
+	"uri": "",
+	"prefix": "ct",
+	"xml": {
+		"tagAlias": "lowerCase"
+	},
+	"types": [
+		{
+			"name": "ChangeTrackedProcess",
+			"extends": [
+				"bpmn:process"
+			],
+			"properties": [
+				{
+					"name": "lastChangeISO",
+					"isAttr": true,
+					"type": "String"
+				}
+			]
+		}
+	]
+}

@@ -1,14 +1,21 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Options, Data, DataSetNodes } from 'vis-network';
 import { Network } from "vis-network/peer/esm/vis-network";
 import { DataSet } from "vis-data/peer/esm/vis-data"
 
 // Bpmn js
 import * as BpmnModdle from 'bpmn-moddle/dist/bpmn-moddle.umd.prod.js';
+import * as CamundaModdle from 'camunda-bpmn-moddle';
 import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 //import * as BpmnViewer from 'bpmn-js/dist/bpmn-navigated-viewer.production.min.js';
 
+
+import ctExtension from '../lib/meta-model-extension.json';
 import CustomRenderer from '../lib/custom-renderer';
+import { BPMNEdge, BPMNElement, BPMNNode, BPMNNodeType, ProcessChangeModel } from '../lib/process-change-model';
+import { take } from 'rxjs';
 
 @Component({
 	selector: 'app-change-vis',
@@ -20,95 +27,67 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 	network: Network | null = null;
 	nodes: DataSet<any> | null = null;
 
+	//inject angular's httpclient in this component
+	constructor(private http: HttpClient) { }
 
-	myTestXml = 
-  `
-  <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_13fnm1p" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="8.8.2">
-  <bpmn:process id="Process_0l16kqm" isExecutable="false">
-    <bpmn:startEvent id="StartEvent_0dn6xbj">
-      <bpmn:outgoing>Flow_0rbozlh</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:task id="Activity_1ncql3e" name="Ac1">
-      <bpmn:incoming>Flow_0rbozlh</bpmn:incoming>
-      <bpmn:outgoing>Flow_0e5lcif</bpmn:outgoing>
-    </bpmn:task>
-    <bpmn:task id="Activity_0l662zv" name="Ac 2">
-      <bpmn:incoming>Flow_1boe108</bpmn:incoming>
-    </bpmn:task>
-    <bpmn:exclusiveGateway id="Gateway_1ybi4r8">
-      <bpmn:incoming>Flow_0e5lcif</bpmn:incoming>
-      <bpmn:outgoing>Flow_1boe108</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1etvjm7</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_0rbozlh" sourceRef="StartEvent_0dn6xbj" targetRef="Activity_1ncql3e" />
-    <bpmn:sequenceFlow id="Flow_0e5lcif" name="Connection haha" sourceRef="Activity_1ncql3e" targetRef="Gateway_1ybi4r8" />
-    <bpmn:sequenceFlow id="Flow_1boe108" sourceRef="Gateway_1ybi4r8" targetRef="Activity_0l662zv" />
-    <bpmn:task id="Activity_0lq9wnl">
-      <bpmn:incoming>Flow_1etvjm7</bpmn:incoming>
-      <bpmn:outgoing>Flow_04nyiht</bpmn:outgoing>
-    </bpmn:task>
-    <bpmn:sequenceFlow id="Flow_1etvjm7" sourceRef="Gateway_1ybi4r8" targetRef="Activity_0lq9wnl" />
-    <bpmn:endEvent id="Event_1s4i4gw">
-      <bpmn:incoming>Flow_04nyiht</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_04nyiht" sourceRef="Activity_0lq9wnl" targetRef="Event_1s4i4gw" />
-  </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_0l16kqm">
-      <bpmndi:BPMNEdge id="Flow_0rbozlh_di" bpmnElement="Flow_0rbozlh">
-        <di:waypoint x="192" y="99" />
-        <di:waypoint x="256" y="99" />
-        <di:waypoint x="256" y="170" />
-        <di:waypoint x="320" y="170" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0e5lcif_di" bpmnElement="Flow_0e5lcif">
-        <di:waypoint x="420" y="170" />
-        <di:waypoint x="490" y="170" />
-        <di:waypoint x="490" y="305" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="468" y="152" width="84" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1boe108_di" bpmnElement="Flow_1boe108">
-        <di:waypoint x="515" y="330" />
-        <di:waypoint x="603" y="330" />
-        <di:waypoint x="603" y="360" />
-        <di:waypoint x="690" y="360" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1etvjm7_di" bpmnElement="Flow_1etvjm7">
-        <di:waypoint x="465" y="330" />
-        <di:waypoint x="340" y="330" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_04nyiht_di" bpmnElement="Flow_04nyiht">
-        <di:waypoint x="280" y="370" />
-        <di:waypoint x="280" y="530" />
-        <di:waypoint x="432" y="530" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_0dn6xbj">
-        <dc:Bounds x="156" y="81" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1ncql3e_di" bpmnElement="Activity_1ncql3e">
-        <dc:Bounds x="320" y="130" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1ybi4r8_di" bpmnElement="Gateway_1ybi4r8" isMarkerVisible="true">
-        <dc:Bounds x="465" y="305" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0l662zv_di" bpmnElement="Activity_0l662zv">
-        <dc:Bounds x="690" y="290" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0lq9wnl_di" bpmnElement="Activity_0lq9wnl">
-        <dc:Bounds x="240" y="290" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1s4i4gw_di" bpmnElement="Event_1s4i4gw">
-        <dc:Bounds x="432" y="512" width="36" height="36" />
-      </bpmndi:BPMNShape>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-</bpmn:definitions>
-  `
+	public testCustomSVG = async (xml: string): Promise<void> => {
+		
+		// Search the SVG and create our own model with the SVG container.
+		const container = document.getElementById("mySVG");
+		if (container == null) {
+			throw new Error("There is no svg container.");
+		}
+		const pcm = new ProcessChangeModel(container);
 
-	constructor() { }
+
+		// create bpmn moddle
+		let moddle = new BpmnModdle({
+			moddleExtensions: {
+				ct: ctExtension,
+				camunda: CamundaModdle
+			}
+		});
+		const thingy = await moddle.fromXML(xml);
+		if (thingy.rootElement.get('rootElements').length <= 0) {
+			throw new Error('there is not even a single process defined.');
+		}
+		const ourProcess = thingy.rootElement.get('diagrams')[0].plane.bpmnElement;
+		const corrDiagramElements = thingy.rootElement.get('diagrams')[0].plane.planeElement;
+
+		console.log('our process in moddle', ourProcess);
+		console.log('diagram objects in moddle', corrDiagramElements);
+
+		// loop over the elements of the moddle and create SVG elements.
+		for (const el of ourProcess.flowElements) {
+			let toAdd: BPMNElement | null = null;
+			const corrDiaElement = el.$type === 'bpmn:StartEvent' ?
+				corrDiagramElements.find(ele => ele.id.toLowerCase().indexOf('startevent') >= 0)
+				: corrDiagramElements.find(ele => ele.id.replace("_di", "") === el.id);
+
+			if (el.$type === 'bpmn:StartEvent') {
+				toAdd = new BPMNNode(el.id, BPMNNodeType.StartEvent);
+				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
+			} else if (el.$type === 'bpmn:Task') {
+				toAdd = new BPMNNode(el.id, BPMNNodeType.Task);
+				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
+			} if (el.$type === 'bpmn:SequenceFlow') {
+				toAdd = new BPMNEdge(el.id);
+				(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
+			} else if (el.$type === 'bpmn:ExclusiveGateway') {
+				// TODO
+			}
+
+			if (toAdd !== null) {
+				pcm.addElement(toAdd);
+			}
+		}
+
+
+		// finally export our process again maybe with the moddle
+		ourProcess.set('lastChangeISO', new Date().toISOString());
+		const exported = await moddle.toXML(thingy.rootElement);
+		console.log('Exporting our extended MetaModel to XML with moddle:', exported);
+	}
 
 	public async testBpmnViewer(xml: string): Promise<void> {
 	
@@ -156,67 +135,40 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 	}
 
-	public async testBpmnModdle(xmlStr: string): Promise<void> {
-	
-		let moddle = new BpmnModdle({});
-
-
-		/*const xmlStr = `
-  <?xml version="1.0" encoding="UTF-8"?>
-  <bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                     id="empty-definitions"
-                     targetNamespace="http://bpmn.io/schema/bpmn">
-
-	<bpmn2:process id="financialReport" name="Monthly financial report reminder process">
-
-      <bpmn2:startEvent id="theStart" />
-
-      <bpmn2:sequenceFlow id="flow1" sourceRef="theStart" targetRef="writeReportTask" />
-
-	</bpmn2:process>
-
-		
-  </bpmn2:definitions>
-
-  `;
-  */
-
-		const {
- 			 rootElement: definitions
-		} = await moddle.fromXML(xmlStr);
-
-		const thingy = await moddle.fromXML(xmlStr);
-
-		console.log(moddle, definitions, thingy);
-
-		// update id attribute
-		definitions.set('id', 'NEW ID');
-
-		// add a root element
-		const bpmnProcess = moddle.create('bpmn:Process', { id: 'MyProcess_1' });
-		definitions.get('rootElements').push(bpmnProcess);
-
-
-		const {
-			xml: xmlStrUpdated
-		} = await moddle.toXML(definitions);
-
-
-		console.log('finished with moddle', xmlStrUpdated);
-	}
-
-
 	async ngOnInit(): Promise<void> {
 
-		await this.testBpmnModdle(this.myTestXml);
-		await this.testBpmnViewer(this.myTestXml);
 
-		// if the div is there, initialize network
-		var container = document.getElementById("mynetwork");
-		if (container instanceof HTMLElement) {
-			this.initializeNetworkInDiv(container);
-		}
+		// read bpmn file
+		let myTestXml = '';
+		this.http.get('/assets/test-process.bpmn',  
+		{  
+			headers: new HttpHeaders()  
+			.set('Content-Type', 'text/xml')  
+			.append('Access-Control-Allow-Methods', 'GET')  
+			.append('Access-Control-Allow-Origin', '*')  
+			.append('Access-Control-Allow-Headers', "Access-Control-Allow-Headers, Access-Control-Allow-Origin, Access-Control-Request-Method"),  
+			responseType: 'text'  
+		}).pipe(take(1)).subscribe(async (str) => {
+			myTestXml = str;
 
+				
+			console.log('we read in a text xml string. that is', myTestXml);
+
+			// bpmn-js
+			await this.testBpmnViewer(myTestXml);
+
+			//our SVG
+			await this.testCustomSVG(myTestXml);
+
+			// test vis-network
+			// vis-network
+			var container = document.getElementById("mynetwork");
+			if (container instanceof HTMLElement) {
+				this.initializeNetworkInDiv(container);
+			}
+		}, (error: any) => {
+			throw new Error(error);
+		});
 
 	}
 
@@ -227,6 +179,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		this.network = null;
 	}
 
+	//vis-network
 	public initializeNetworkInDiv(element: HTMLElement) {
 
 		// create an array with nodes
