@@ -23,22 +23,20 @@ import { take } from 'rxjs';
 })
 export class ChangeVisComponent implements OnInit, OnDestroy {
 
-	// Vis network
-	network: Network | null = null;
-	nodes: DataSet<any> | null = null;
+	pcmBefore: ProcessChangeModel | null = null;
+	pcmAfter: ProcessChangeModel | null = null;
 
-	//inject angular's httpclient in this component
 	constructor(private http: HttpClient) { }
 
-	public testCustomSVG = async (xml: string): Promise<void> => {
+	public initProcessChangeModelsFromXML = async (xmlProcessBefore: string, xmlProcessAfter: string): Promise<void> => {
 		
 		// Search the SVG and create our own model with the SVG container.
-		const container = document.getElementById("mySVG");
-		if (container == null) {
-			throw new Error("There is no svg container.");
-		}
-		const pcm = new ProcessChangeModel(container);
+		const containerProcessBefore = document.getElementById("mySVGBefore");
+		const containerProcessAfter = document.getElementById("mySVGAfter");
 
+		if (!containerProcessBefore || !containerProcessAfter) {
+			throw new Error('there is at least 1 SVG container missing for the two processes.');
+		}
 
 		// create bpmn moddle
 		let moddle = new BpmnModdle({
@@ -47,15 +45,30 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				camunda: CamundaModdle
 			}
 		});
-		const thingy = await moddle.fromXML(xml);
-		if (thingy.rootElement.get('rootElements').length <= 0) {
+		const processBefore = await moddle.fromXML(xmlProcessBefore);
+		const processAfter = await moddle.fromXML(xmlProcessAfter);
+
+		const pcmBefore = this.buildProcessChangeModelFromModdle(processBefore, containerProcessBefore);
+		const pcmAfter = this.buildProcessChangeModelFromModdle(processAfter, containerProcessAfter);
+
+		// TODO: for future: finally export our process again maybe with the moddle
+		const ourProcess = processBefore.rootElement.get('diagrams')[0].plane.bpmnElement;
+		ourProcess.set('lastChangeISO', new Date().toISOString());
+		const exported = await moddle.toXML(processBefore.rootElement);
+		console.log('Exporting our extended MetaModel to XML with moddle:', exported);
+	}
+
+	public buildProcessChangeModelFromModdle = (moddle: any, svgContainer: HTMLElement): ProcessChangeModel => {
+		if (moddle.rootElement.get('rootElements').length <= 0) {
 			throw new Error('there is not even a single process defined.');
 		}
-		const ourProcess = thingy.rootElement.get('diagrams')[0].plane.bpmnElement;
-		const corrDiagramElements = thingy.rootElement.get('diagrams')[0].plane.planeElement;
+		const ourProcess = moddle.rootElement.get('diagrams')[0].plane.bpmnElement;
+		const corrDiagramElements = moddle.rootElement.get('diagrams')[0].plane.planeElement;
 
 		console.log('our process in moddle', ourProcess);
 		console.log('diagram objects in moddle', corrDiagramElements);
+
+		const pcm = new ProcessChangeModel(svgContainer);
 
 		// loop over the elements of the moddle and create SVG elements.
 		for (const el of ourProcess.flowElements) {
@@ -82,11 +95,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			}
 		}
 
-
-		// finally export our process again maybe with the moddle
-		ourProcess.set('lastChangeISO', new Date().toISOString());
-		const exported = await moddle.toXML(thingy.rootElement);
-		console.log('Exporting our extended MetaModel to XML with moddle:', exported);
+		return pcm;
 	}
 
 	public async testBpmnViewer(xml: string): Promise<void> {
@@ -157,15 +166,8 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			// bpmn-js
 			await this.testBpmnViewer(myTestXml);
 
-			//our SVG
-			await this.testCustomSVG(myTestXml);
-
-			// test vis-network
-			// vis-network
-			var container = document.getElementById("mynetwork");
-			if (container instanceof HTMLElement) {
-				this.initializeNetworkInDiv(container);
-			}
+			//init our two SVGs with the two XMLs.
+			await this.initProcessChangeModelsFromXML(myTestXml, myTestXml);
 		}, (error: any) => {
 			throw new Error(error);
 		});
@@ -173,77 +175,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnDestroy(): void {
-		if (this.network) {
-			this.network.destroy();
-		}
-		this.network = null;
-	}
 
-	//vis-network
-	public initializeNetworkInDiv(element: HTMLElement) {
-
-		// create an array with nodes
-		this.nodes = new DataSet([
-			{ id: 1, font: "10px arial black", label: "Activity 1 \n\n Some text \n describing blablabla", group: "activity", },
-			{ id: 2, font: "10px arial black", label: "", group: "gate", },
-			{ id: 3, font: "10px arial black", label: "", group: "gate" },
-			{ id: 4, font: "10px arial black", label: "Node 4", group: "activity" },
-			{ id: 5, font: "10px arial black", label: "Node 5", group: "activity" },
-		]);
-
-		// create an array with edges
-		let edges = new DataSet<any>([
-			{ from: 1, to: 3, width: 1, selectionWidth: 3, smooth: true, arrows: {to: {enabled: true}} },
-			{ from: 1, to: 2, width: 1, selectionWidth: 3, smooth: true, arrows: {to: {enabled: true}} },
-			{ from: 2, to: 4, width: 1, selectionWidth: 3, smooth: false, arrows: {to: {enabled: true}} },
-			{ from: 2, to: 5, width: 1, selectionWidth: 3, smooth: true, arrows: {to: {enabled: true}} },
-			{ from: 3, to: 4, width: 1, selectionWidth: 3, smooth: false, arrows: {to: {enabled: true}} },
-		]);
-
-		let data: Data = {
-			nodes: this.nodes,
-			edges: edges,
-		};
-		let options: Options = {
-			interaction: {
-				multiselect: true,
-				navigationButtons: true,
-				selectConnectedEdges: false
-			},
-			physics: {
-				barnesHut: {
-					springLength: 130
-				}
-			},
-			groups: {
-				activity: {
-					shape: 'box',
-					color: {background: 'white', border: 'black'}
-				},
-				gate: {
-					shape: 'diamond',
-					color: {background: 'white', border: 'black'}
-				}
-			}
-		};
-		this.network = new Network(element, data, options);
-
-
-		//alternatively selectEdge, selectNode
-		this.network.on('click', (eventObj: any) => {
-			console.log("Clicked in network.", eventObj);
-
-			// lets see whether we can modify single edges/nodes after
-
-			let selectedNodeId = eventObj.nodes[0];
-			if (selectedNodeId) {
-				console.log(this.network);
-
-				this.nodes?.update({
-					id: selectedNodeId,
-					label: "New Label On Change!"
-				});
-			}
-		});
 	}
 }
