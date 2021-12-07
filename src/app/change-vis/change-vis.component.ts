@@ -48,8 +48,10 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		const processBefore = await moddle.fromXML(xmlProcessBefore);
 		const processAfter = await moddle.fromXML(xmlProcessAfter);
 
-		const pcmBefore = this.buildProcessChangeModelFromModdle(processBefore, containerProcessBefore);
-		const pcmAfter = this.buildProcessChangeModelFromModdle(processAfter, containerProcessAfter);
+		const pcmBefore = await this.buildProcessChangeModelFromModdle(processBefore, containerProcessBefore);
+		const pcmAfter = await this.buildProcessChangeModelFromModdle(processAfter, containerProcessAfter);
+
+		console.log(pcmBefore);
 
 		// TODO: for future: finally export our process again maybe with the moddle
 		const ourProcess = processBefore.rootElement.get('diagrams')[0].plane.bpmnElement;
@@ -58,7 +60,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		console.log('Exporting our extended MetaModel to XML with moddle:', exported);
 	}
 
-	public buildProcessChangeModelFromModdle = (moddle: any, svgContainer: HTMLElement): ProcessChangeModel => {
+	public buildProcessChangeModelFromModdle = async (moddle: any, svgContainer: HTMLElement): Promise<ProcessChangeModel> => {
 		if (moddle.rootElement.get('rootElements').length <= 0) {
 			throw new Error('there is not even a single process defined.');
 		}
@@ -70,6 +72,8 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 		const pcm = new ProcessChangeModel(svgContainer);
 
+		let stuffTodoAfterElementsWereAdded: Promise<void>[] = [];
+
 		// loop over the elements of the moddle and create SVG elements.
 		for (const el of ourProcess.flowElements) {
 			let toAdd: BPMNElement | null = null;
@@ -80,20 +84,37 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			if (el.$type === 'bpmn:StartEvent') {
 				toAdd = new BPMNNode(el.id, BPMNNodeType.StartEvent);
 				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
+			} else if (el.$type === 'bpmn:EndEvent') {
+				toAdd = new BPMNNode(el.id, BPMNNodeType.EndEvent);
+				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 			} else if (el.$type === 'bpmn:Task') {
 				toAdd = new BPMNNode(el.id, BPMNNodeType.Task);
 				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
+				(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 			} if (el.$type === 'bpmn:SequenceFlow') {
 				toAdd = new BPMNEdge(el.id);
 				(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
+
+				let idInput = corrDiaElement.bpmnElement.sourceRef?.id;
+				let idOutput = corrDiaElement.bpmnElement.sourceRef?.id;
+				stuffTodoAfterElementsWereAdded.push(new Promise((resolve, reject) => {
+					(toAdd as BPMNEdge).input = pcm.getElements().filter(el => el instanceof BPMNNode).find(el => el.id === idInput) as BPMNNode ?? null;
+					(toAdd as BPMNEdge).output = pcm.getElements().filter(el => el instanceof BPMNNode).find(el => el.id === idOutput) as BPMNNode ?? null;
+					resolve();
+				}));
+				
+
 			} else if (el.$type === 'bpmn:ExclusiveGateway') {
-				// TODO
+				toAdd = new BPMNNode(el.id, BPMNNodeType.SplitOR);
+				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 			}
 
 			if (toAdd !== null) {
 				pcm.addElement(toAdd);
 			}
 		}
+
+		await Promise.all(stuffTodoAfterElementsWereAdded);
 
 		return pcm;
 	}
