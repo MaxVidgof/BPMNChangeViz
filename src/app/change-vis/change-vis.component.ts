@@ -13,8 +13,7 @@ import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 
 
 import ctExtension from '../lib/meta-model-extension.json';
-import CustomRenderer from '../lib/custom-renderer';
-import { BPMNEdge, BPMNElement, BPMNNode, BPMNNodeType, ProcessChangeModel } from '../lib/process-change-model';
+import { BPMNEdge, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, ProcessChangeModel } from '../lib/process-change-model';
 import { take } from 'rxjs';
 
 @Component({
@@ -25,6 +24,8 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 	pcmBefore: ProcessChangeModel | null = null;
 	pcmAfter: ProcessChangeModel | null = null;
+
+	loading: boolean = true;
 
 	constructor(private http: HttpClient) { }
 
@@ -45,6 +46,8 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				camunda: CamundaModdle
 			}
 		});
+
+		// TODO try to parse moddle. if it doesnt work show error to user.
 		const processBefore = await moddle.fromXML(xmlProcessBefore);
 		const processAfter = await moddle.fromXML(xmlProcessAfter);
 
@@ -74,24 +77,15 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 		let stuffTodoAfterElementsWereAdded: Promise<void>[] = [];
 
-		// loop over the elements of the moddle and create SVG elements.
-		for (const el of ourProcess.flowElements) {
+		for (const element of corrDiagramElements) {
 			let toAdd: BPMNElement | null = null;
-			const corrDiaElement = el.$type === 'bpmn:StartEvent' ?
-				corrDiagramElements.find(ele => ele.id.toLowerCase().indexOf('startevent') >= 0)
-				: corrDiagramElements.find(ele => ele.id.replace("_di", "") === el.id);
+			const el = element.bpmnElement;
+			const corrDiaElement = element;
 
-			if (el.$type === 'bpmn:StartEvent') {
-				toAdd = new BPMNNode(el.id, BPMNNodeType.StartEvent);
-				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
-			} else if (el.$type === 'bpmn:EndEvent') {
-				toAdd = new BPMNNode(el.id, BPMNNodeType.EndEvent);
-				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
-			} else if (el.$type === 'bpmn:Task') {
-				toAdd = new BPMNNode(el.id, BPMNNodeType.Task);
-				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
-				(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
-			} if (el.$type === 'bpmn:SequenceFlow') {
+			//already get type in case its a node.
+			let nodeType = BPMNNodeTypeMappings.find(m => m.bpmnIoType === el.$type)?.type;
+
+			if (el.$type === 'bpmn:SequenceFlow') {
 				toAdd = new BPMNEdge(el.id);
 				(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
 
@@ -104,9 +98,10 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				}));
 				
 
-			} else if (el.$type === 'bpmn:ExclusiveGateway') {
-				toAdd = new BPMNNode(el.id, BPMNNodeType.SplitOR);
+			} else if (nodeType){
+				toAdd = new BPMNNode(el.id, nodeType);
 				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
+				(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 			}
 
 			if (toAdd !== null) {
@@ -124,7 +119,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		let modeler = new BpmnModeler({
 			container: '#myBpmnNetwork',
 			additionalModules: [
-				CustomRenderer
 			]
 		});
 
@@ -170,6 +164,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 		// read bpmn file
 		let myTestXml = '';
+		let myTestXml2 = '';
 		this.http.get('/assets/test-process.bpmn',  
 		{  
 			headers: new HttpHeaders()  
@@ -181,14 +176,31 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		}).pipe(take(1)).subscribe(async (str) => {
 			myTestXml = str;
 
-				
-			console.log('we read in a text xml string. that is', myTestXml);
+			this.http.get('/assets/test-process-medium.bpmn',  
+			{  
+				headers: new HttpHeaders()  
+				.set('Content-Type', 'text/xml')  
+				.append('Access-Control-Allow-Methods', 'GET')  
+				.append('Access-Control-Allow-Origin', '*')  
+				.append('Access-Control-Allow-Headers', "Access-Control-Allow-Headers, Access-Control-Allow-Origin, Access-Control-Request-Method"),  
+				responseType: 'text'  
+			}).pipe(take(1)).subscribe(async (str2) => {
+					
+				myTestXml2 = str2;
+				console.log('we read in a text xml string. that is', myTestXml);
 
-			// bpmn-js
-			await this.testBpmnViewer(myTestXml);
+				// bpmn-js
+				await this.testBpmnViewer(myTestXml2);
 
-			//init our two SVGs with the two XMLs.
-			await this.initProcessChangeModelsFromXML(myTestXml, myTestXml);
+				//init our two SVGs with the two XMLs.
+				await this.initProcessChangeModelsFromXML(myTestXml, myTestXml2);
+
+				this.loading = false;
+
+			}, (error: any) => {
+				throw new Error(error);
+			});
+
 		}, (error: any) => {
 			throw new Error(error);
 		});
