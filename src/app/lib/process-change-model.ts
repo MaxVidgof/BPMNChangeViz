@@ -10,11 +10,17 @@ import { InteractiveSVG } from "./interactive-svg";
 // about the process plus change. So that we can later easily visualize it and export it.
 export class ProcessChangeModel {
 
+
+	// we model our own process elements, the reference to the moddle and the reference to the SVG.
+	// thats all we need.
+
 	private elements: BPMNElement[] = [];
 	private interactiveSVG: InteractiveSVG;
+	private moddleObj: any;
 
-	constructor(svgContainer: HTMLElement) {
+	constructor(svgContainer: HTMLElement, moddleObj: any) {
 		this.interactiveSVG = new InteractiveSVG(svgContainer);
+		this.moddleObj = moddleObj;
 	}
 
 	public getElements = (): BPMNElement[] => {
@@ -121,13 +127,18 @@ export class ProcessChangeModel {
 			if (elementInOtherWithSameId) {
 				console.log('found an element by id, existing in both processes.');
 				// TODO: explore changes.
+				// but i fear the ids are totally random.
+				//maybe find another approach.
 			}
 		}
 
 
-		// ...or elements that have different id but same properties/texts/positions?
-		// think about those scenarios...
-		// how could people modify a process?
+		// 	one part of the problem is graph isomorphism, but we probably wont look at that complex problem.
+
+		// if there is an activity doing X, do we find an activity doing X in the second process?
+		// if there is a loop involving some activities, do we find a loop involving such in the second process?
+
+
 
 		// we want to modify this class here according to changes we see in the otherPcm.
 

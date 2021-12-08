@@ -64,16 +64,12 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 	}
 
 	public buildProcessChangeModelFromModdle = async (moddle: any, svgContainer: HTMLElement): Promise<ProcessChangeModel> => {
-		if (moddle.rootElement.get('rootElements').length <= 0) {
-			throw new Error('there is not even a single process defined.');
-		}
-		const ourProcess = moddle.rootElement.get('diagrams')[0].plane.bpmnElement;
+
 		const corrDiagramElements = moddle.rootElement.get('diagrams')[0].plane.planeElement;
 
-		console.log('our process in moddle', ourProcess);
 		console.log('diagram objects in moddle', corrDiagramElements);
 
-		const pcm = new ProcessChangeModel(svgContainer);
+		const pcm = new ProcessChangeModel(svgContainer, moddle);
 
 		let stuffTodoAfterElementsWereAdded: Promise<void>[] = [];
 
