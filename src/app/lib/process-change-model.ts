@@ -80,10 +80,12 @@ export class ProcessChangeModel {
 
 		//adjust style
 		let fill = 'white';
+		let stroke = 'black';
 		let pathIcon = BPMNNodeTypeMappings.find(m => m.type === element.type)?.iconPath ?? '';
 
 		if (element.type === BPMNNodeType.SendTask) {
 			fill = 'black';
+			stroke = 'white';
 		}
 
 
@@ -93,7 +95,7 @@ export class ProcessChangeModel {
 			...this.interactiveSVG.createTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split("\n"), 'stroke: black'),
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;'),
 			this.interactiveSVG.createPathByString('', false, false, pathIcon,
-			'fill: ' + fill + '; stroke: black; stroke-width: 1px;'),
+			'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 1px;'),
 		);
 		this.interactiveSVG.panTransformElement(correspondingSVGElement, element.diagramShape.x, element.diagramShape.y);
 	
@@ -161,6 +163,8 @@ export enum BPMNNodeType {
 	"SendTask",
 	"ReceiveTask",
 	"ManualTask",
+	"ScriptTask",
+	"BusinessRuleTask",
 	"GatewayAND",
 	"GatewayOR",
 	"ComplexGateway",
@@ -175,6 +179,8 @@ export const BPMNNodeTypeMappings: BPMNNodeTypeEntry[] = [
 	{bpmnIoType: 'bpmn:ComplexGateway', type: BPMNNodeType.ComplexGateway, iconPath: 'm 23,13 0,7.116788321167883 -5.018248175182482,-5.018248175182482 -3.102189781021898,3.102189781021898 5.018248175182482,5.018248175182482 -7.116788321167883,0 0,4.37956204379562 7.116788321167883,0  -5.018248175182482,5.018248175182482 l 3.102189781021898,3.102189781021898 5.018248175182482,-5.018248175182482 0,7.116788321167883 4.37956204379562,0 0,-7.116788321167883 5.018248175182482,5.018248175182482 3.102189781021898,-3.102189781021898 -5.018248175182482,-5.018248175182482 7.116788321167883,0 0,-4.37956204379562 -7.116788321167883,0 5.018248175182482,-5.018248175182482 -3.102189781021898,-3.102189781021898 -5.018248175182482,5.018248175182482 0,-7.116788321167883 -4.37956204379562,0 z'},
 	{bpmnIoType: 'bpmn:EventBasedGateway', type: BPMNNodeType.EventBasedGateway, iconPath: 'm 18,22 7.363636363636364,-4.909090909090909 7.363636363636364,4.909090909090909 -2.4545454545454546,9.818181818181818 -9.818181818181818,0 z'},
 	{bpmnIoType: 'bpmn:Task', type: BPMNNodeType.Task, iconPath: ''},
+	{bpmnIoType: 'bpmn:ScriptTask', type: BPMNNodeType.ScriptTask, iconPath: 'm 8,8 0,12 20,0 0,-12 zm 0,8 l 20,0 m -13,-4 l 0,8'},
+	{bpmnIoType: 'bpmn:BusinessRuleTask', type: BPMNNodeType.BusinessRuleTask, iconPath: 'm 8,8 0,12 20,0 0,-12 zm 0,8 l 20,0 m -13,-4 l 0,8'},
 	{bpmnIoType: 'bpmn:UserTask', type: BPMNNodeType.UserTask, iconPath: 'm 15,12 c 0.909,-0.845 1.594,-2.049 1.594,-3.385 0,-2.554 -1.805,-4.62199999 -4.357,-4.62199999 -2.55199998,0 -4.28799998,2.06799999 -4.28799998,4.62199999 0,1.348 0.974,2.562 1.89599998,3.405 -0.52899998,0.187 -5.669,2.097 -5.794,4.7560005 v 6.718 h 17 v -6.718 c 0,-2.2980005 -5.5279996,-4.5950005 -6.0509996,-4.7760005 zm -8,6 l 0,5.5 m 11,0 l 0,-5'},
 	{bpmnIoType: 'bpmn:ManualTask', type: BPMNNodeType.ManualTask, iconPath: 'm 17,15 c 0.234,-0.01 5.604,0.008 8.029,0.004 0.808,0 1.271,-0.172 1.417,-0.752 0.227,-0.898 -0.334,-1.314 -1.338,-1.316 -2.467,-0.01 -7.886,-0.004 -8.108,-0.004 -0.014,-0.079 0.016,-0.533 0,-0.61 0.195,-0.042 8.507,0.006 9.616,0.002 0.877,-0.007 1.35,-0.438 1.353,-1.208 0.003,-0.768 -0.479,-1.09 -1.35,-1.091 -2.968,-0.002 -9.619,-0.013 -9.619,-0.013 v -0.591 c 0,0 5.052,-0.016 7.225,-0.016 0.888,-0.002 1.354,-0.416 1.351,-1.193 -0.006,-0.761 -0.492,-1.196 -1.361,-1.196 -3.473,-0.005 -10.86,-0.003 -11.0829995,-0.003 -0.022,-0.047 -0.045,-0.094 -0.069,-0.139 0.3939995,-0.319 2.0409995,-1.626 2.4149995,-2.017 0.469,-0.4870005 0.519,-1.1650005 0.162,-1.6040005 -0.414,-0.511 -0.973,-0.5 -1.48,-0.236 -1.4609995,0.764 -6.5999995,3.6430005 -7.7329995,4.2710005 -0.9,0.499 -1.516,1.253 -1.882,2.19 -0.37000002,0.95 -0.17,2.01 -0.166,2.979 0.004,0.718 -0.27300002,1.345 -0.055,2.063 0.629,2.087 2.425,3.312 4.859,3.318 4.6179995,0.014 9.2379995,-0.139 13.8569995,-0.158 0.755,-0.004 1.171,-0.301 1.182,-1.033 0.012,-0.754 -0.423,-0.969 -1.183,-0.973 -1.778,-0.01 -5.824,-0.004 -6.04,-0.004 10e-4,-0.084 0.003,-0.586 10e-4,-0.67 z'},
 	{bpmnIoType: 'bpmn:SendTask', type: BPMNNodeType.SendTask, iconPath: 'm 5.984999999999999,4.997999999999999 l 0,14 l 21,0 l 0,-14 z l 10.5,6 l 10.5,-6'},

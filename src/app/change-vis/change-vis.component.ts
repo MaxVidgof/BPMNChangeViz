@@ -81,6 +81,9 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			//already get type in case its a node.
 			let nodeType = BPMNNodeTypeMappings.find(m => m.bpmnIoType === el.$type)?.type;
 
+			
+			console.log('beginning', nodeType, el.$type, toAdd);
+			
 			if (el.$type === 'bpmn:SequenceFlow') {
 				toAdd = new BPMNEdge(el.id);
 				(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
@@ -94,11 +97,13 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				}));
 				
 
-			} else if (nodeType){
+			} else if (nodeType !== null && nodeType !== undefined){
+				console.log(' - came through', el.$type, nodeType)
 				toAdd = new BPMNNode(el.id, nodeType);
 				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 				(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 			}
+
 
 			if (toAdd !== null) {
 				pcm.addElement(toAdd);
@@ -172,7 +177,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		}).pipe(take(1)).subscribe(async (str) => {
 			myTestXml = str;
 
-			this.http.get('/assets/test-process-medium.bpmn',  
+			this.http.get('/assets/test-process-bigger.bpmn',  
 			{  
 				headers: new HttpHeaders()  
 				.set('Content-Type', 'text/xml')  
