@@ -13,7 +13,7 @@ import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 
 
 import ctExtension from '../lib/meta-model-extension.json';
-import { BPMNEdge, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, ProcessChangeModel } from '../lib/process-change-model';
+import { BPMNEdge, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ProcessChangeModel } from '../lib/process-change-model';
 import { take } from 'rxjs';
 
 @Component({
@@ -81,9 +81,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			//already get type in case its a node.
 			let nodeType = BPMNNodeTypeMappings.find(m => m.bpmnIoType === el.$type)?.type;
 
-			
-			console.log('beginning', nodeType, el.$type, toAdd);
-			
 			if (el.$type === 'bpmn:SequenceFlow') {
 				toAdd = new BPMNEdge(el.id);
 				(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
@@ -95,10 +92,13 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 					(toAdd as BPMNEdge).output = pcm.getElements().filter(el => el instanceof BPMNNode).find(el => el.id === idOutput) as BPMNNode ?? null;
 					resolve();
 				}));
-				
-
+			} else if (el.$type === 'bpmn:TextAnnotation') {
+				toAdd = new BPMNTextAnnotation(el.id);
+				(toAdd as BPMNTextAnnotation).diagramShape = corrDiaElement.bounds;
+				(toAdd as BPMNTextAnnotation).description = el.text ?? '';
+			} else if (el.$type === 'bpmn:Participant') {
+				toAdd = new BPMNParticipant(el.id, corrDiaElement.bounds);
 			} else if (nodeType !== null && nodeType !== undefined){
-				console.log(' - came through', el.$type, nodeType)
 				toAdd = new BPMNNode(el.id, nodeType);
 				(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 				(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
@@ -160,24 +160,9 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 	}
 
-	async ngOnInit(): Promise<void> {
-
-
-		// read bpmn file
-		let myTestXml = '';
-		let myTestXml2 = '';
-		this.http.get('/assets/test-process.bpmn',  
-		{  
-			headers: new HttpHeaders()  
-			.set('Content-Type', 'text/xml')  
-			.append('Access-Control-Allow-Methods', 'GET')  
-			.append('Access-Control-Allow-Origin', '*')  
-			.append('Access-Control-Allow-Headers', "Access-Control-Allow-Headers, Access-Control-Allow-Origin, Access-Control-Request-Method"),  
-			responseType: 'text'  
-		}).pipe(take(1)).subscribe(async (str) => {
-			myTestXml = str;
-
-			this.http.get('/assets/test-process-bigger.bpmn',  
+	async doSimpleGETRequest<T>(url: string): Promise<T> {
+		return new Promise((resolve, reject) => {
+			this.http.get(url,  
 			{  
 				headers: new HttpHeaders()  
 				.set('Content-Type', 'text/xml')  
@@ -185,27 +170,33 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				.append('Access-Control-Allow-Origin', '*')  
 				.append('Access-Control-Allow-Headers', "Access-Control-Allow-Headers, Access-Control-Allow-Origin, Access-Control-Request-Method"),  
 				responseType: 'text'  
-			}).pipe(take(1)).subscribe(async (str2) => {
-					
-				myTestXml2 = str2;
-				console.log('we read in a text xml string. that is', myTestXml);
-
-				// bpmn-js
-				await this.testBpmnViewer(myTestXml2);
-
-				//init our two SVGs with the two XMLs.
-				await this.initProcessChangeModelsFromXML(myTestXml, myTestXml2);
-
-				this.loading = false;
-
+			}).pipe(take(1)).subscribe((str: any) => {
+				resolve(str)
 			}, (error: any) => {
 				throw new Error(error);
 			});
-
-		}, (error: any) => {
-			throw new Error(error);
 		});
+	}
 
+	async ngOnInit(): Promise<void> {
+
+
+		// read bpmn file
+		let myTestXml = '';
+		let myTestXml2 = '';
+
+		myTestXml = await this.doSimpleGETRequest('/assets/test-process2.bpmn');
+		myTestXml2 = await this.doSimpleGETRequest('/assets/test-process2.bpmn');
+
+		console.log('we read in a text xml string. that is', myTestXml);
+
+		// bpmn-js
+		await this.testBpmnViewer(myTestXml2);
+
+		//init our two SVGs with the two XMLs.
+		await this.initProcessChangeModelsFromXML(myTestXml, myTestXml2);
+
+		this.loading = false;
 	}
 
 	ngOnDestroy(): void {

@@ -157,7 +157,7 @@ export class InteractiveSVG {
 		this.matrixGroup.appendChild(element);
 	}
 	
-	public createSVGGroup(id: string, setIdentityTransform: boolean, ...elements: SVGElement[] | SVGPathElement[]): SVGElement {
+	public createSVGGroup(id: string, setIdentityTransform: boolean, ...elements: (SVGElement | SVGPathElement)[]): SVGElement {
 		let newGroup = document.createElementNS("http://www.w3.org/2000/svg", 'g');
 		this.setStandardAttributes(newGroup, id, false, false, null);
 		if (setIdentityTransform != null) {

@@ -8,7 +8,7 @@ import { ChangeVisComponent } from './change-vis/change-vis.component';
 @NgModule({
 	declarations: [
 		AppComponent,
-  ChangeVisComponent
+  		ChangeVisComponent
 	],
 	imports: [
 		BrowserModule,
