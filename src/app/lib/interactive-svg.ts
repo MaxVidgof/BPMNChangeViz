@@ -1,4 +1,19 @@
 
+export class ColoredMarker {
+
+	id: string;
+	name: string;
+	style: string;
+	path: string;
+
+	constructor(id: string, name: string, style: string, path: string) {
+		this.id = id;
+		this.name = name;
+		this.style = style;
+		this.path = path;
+	}
+}
+
 
 // we create ourselves a little interactive wrapper for SVGs.
 export class InteractiveSVG {
@@ -7,18 +22,19 @@ export class InteractiveSVG {
 	selectedElementForDrag: SVGElement | null;
 	dragOffset: {x: number, y: number} = {x: 0, y: 0};
 
-	public readonly MARKER_URL_ARROW_HEAD_END = 'sequenceflow-end-white-black-doq2fvopnj4c3h1erjbstx8an';
-
+	coloredMarkers: ColoredMarker[] = [];
+	
 	// for panning and zooming. Starts with the identity matrix.
 	// https://www.petercollingridge.co.uk/tutorials/svg/interactive/pan-and-zoom/
 	matrixGroup: SVGElement;
 	currentScale: number;
-
-	constructor(svgContainer: HTMLElement) {
+	
+	constructor(svgContainer: HTMLElement, markers: ColoredMarker[]) {
 		this.svgContainer = svgContainer;
 		this.pointerDown = false;
 		this.currentScale = 1;
 		this.selectedElementForDrag = null;
+		this.coloredMarkers = markers;
 
 		this.svgContainer.addEventListener('pointerdown', (event: any) => {
 
@@ -101,8 +117,9 @@ export class InteractiveSVG {
 
 		// create arrowhead marker
 		let defs = document.createElementNS("http://www.w3.org/2000/svg", 'defs');
+		for (const m of markers) {
 			let marker = document.createElementNS("http://www.w3.org/2000/svg", 'marker');
-			marker.setAttributeNS(null, "id", this.MARKER_URL_ARROW_HEAD_END);
+			marker.setAttributeNS(null, "id", m.id);
 			marker.setAttributeNS(null, "viewBox", "0 0 20 20");
 			marker.setAttributeNS(null, "refX", "11");
 			marker.setAttributeNS(null, "refY", "10");
@@ -110,12 +127,12 @@ export class InteractiveSVG {
 			marker.setAttributeNS(null, "markerHeight", "10");
 			marker.setAttributeNS(null, "orient", "auto");
 				let path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-				path.setAttributeNS(null, "d", "M 1 5 L 11 10 L 1 15 Z");
-				path.setAttributeNS(null, "style", "fill: black; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: black;");
+				path.setAttributeNS(null, "d", m.path);
+				path.setAttributeNS(null, "style", m.style);
 				marker.appendChild(path);
 			defs.appendChild(marker);
+		}
 		this.svgContainer.appendChild(defs);
-		
 	}
 
 	public panTransformElement = (element: SVGElement | SVGPathElement, dx: number, dy: number): void => {

@@ -5,7 +5,7 @@
 // this is gonna be our own little custom data structure to hold information
 
 import { platformCore } from "@angular/core";
-import { InteractiveSVG } from "./interactive-svg";
+import { ColoredMarker, InteractiveSVG } from "./interactive-svg";
 
 // about the process plus change. So that we can later easily visualize it and export it.
 export class ProcessChangeModel {
@@ -19,12 +19,36 @@ export class ProcessChangeModel {
 	private moddleObj: any;
 
 	constructor(svgContainer: HTMLElement, moddleObj: any) {
-		this.interactiveSVG = new InteractiveSVG(svgContainer);
+		this.interactiveSVG = new InteractiveSVG(svgContainer, [
+			new ColoredMarker('sequenceflow-end-white-black-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Black', "fill: black; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: black;", "M 1 5 L 11 10 L 1 15 Z"),
+			new ColoredMarker('sequenceflow-end-red-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Red', "fill: red; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: red;", "M 1 5 L 11 10 L 1 15 Z"),
+			new ColoredMarker('sequenceflow-end-green-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Green', "fill: green; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: green;", "M 1 5 L 11 10 L 1 15 Z")
+		]);
 		this.moddleObj = moddleObj;
 	}
 
 	public getElements = (): BPMNElement[] => {
 		return this.elements;
+	}
+
+	public setElementAsIncreased = (element: BPMNElement): void => {
+		//TODO
+		throw new Error('Method not implemented yet.');
+	}
+
+	public setElementAsDecreased = (element: BPMNElement): void => {
+		//TODO
+		throw new Error('Method not implemented yet.');
+	}
+
+	public setElementAsAdded = (element: BPMNElement): void => {
+		//TODO
+		throw new Error('Method not implemented yet.');
+	}
+
+	public setElementAsRemoved = (element: BPMNElement): void => {
+		//TODO
+		throw new Error('Method not implemented yet.');
 	}
 
 	public addElement = (element: BPMNElement): void => {
@@ -45,7 +69,7 @@ export class ProcessChangeModel {
 				console.warn("TODO!");
 			}
 		} else if (element instanceof BPMNEdge) {
-			correspondingSVGElement = this.interactiveSVG.createPathByWaypoints(element.id, false, false, element.diagramShape.waypoints, false, "fill: none; stroke: black; stroke-width: 3px; stroke-linejoin: round; marker-end: url(#" + this.interactiveSVG.MARKER_URL_ARROW_HEAD_END + ");");
+			correspondingSVGElement = this.interactiveSVG.createPathByWaypoints(element.id, false, false, element.diagramShape.waypoints, false, "fill: none; stroke: black; stroke-width: 3px; stroke-linejoin: round; marker-end: url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === 'FlowEnd ArrowHead Black')?.id + ");");
 		} else if(element instanceof BPMNTextAnnotation) {
 			correspondingSVGElement = this.createRectangleTextAnnotation(element);
 		} else if(element instanceof BPMNParticipant) {

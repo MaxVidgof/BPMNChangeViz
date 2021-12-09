@@ -149,7 +149,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			const overlays = modeler.get('overlays');	// should also be available in viewer
 
 			const elements = elementRegistry.getAll();
-			console.log('we have so many elements', elements.length, elements[3]);
 
 			modeling.setColor([elements[1], elements[3]], {
 				fill: 'green',
@@ -187,8 +186,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 		myTestXml = await this.doSimpleGETRequest('/assets/test-process2.bpmn');
 		myTestXml2 = await this.doSimpleGETRequest('/assets/test-process2.bpmn');
-
-		console.log('we read in a text xml string. that is', myTestXml);
 
 		// bpmn-js
 		await this.testBpmnViewer(myTestXml2);
