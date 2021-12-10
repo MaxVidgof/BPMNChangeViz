@@ -1,30 +1,39 @@
-
-
-
 <div class="container">
-	<h1 style="padding: 2em 0em 2em 0em">Process Change Visualizer</h1>
+  <h1 style="padding: 2em 0em 2em 0em">Process Change Visualizer</h1>
 
-	<!-- bpmn js -->
-	<div id="myBpmnNetwork" class="networkContainer" style="width: 40em; height: 30em;"></div>
+  <!-- bpmn js -->
+  <div
+    id="myBpmnNetwork"
+    class="networkContainer"
+    style="width: 40em; height: 30em"
+  ></div>
 
+  <!-- our 2 SVGs for processes -->
+  <div class="container">
+    <div class="row align-items-start">
+      <h3>Process Before</h3>
+      <div class="col">
+        <!-- SVG's must remain - everything else can be changed  -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="networkContainer"
+          id="mySVGBefore"
+          width="40em"
+          height="30em"
+        ></svg>
+      </div>
 
-
-	<!-- our 2 SVGs for processes -->
-	<div class="container">
-		<div class="row align-items-start">
-			<h3>Process Before</h3>
-			<div class="col">
-				<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGBefore" width="40em" height="30em">
-
-				</svg>
-			</div>
-
-			<h3>Process After</h3>
-			<div class="col">
-				<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGAfter" width="40em" height="30em">
-
-				</svg>
-			</div>
-		</div>
-	</div>
+      <h3>Process After</h3>
+      <div class="col">
+        <!-- SVG's must remain - everything else can be changed  -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="networkContainer"
+          id="mySVGAfter"
+          width="40em"
+          height="30em"
+        ></svg>
+      </div>
+    </div>
+  </div>
 </div>
