@@ -1,12 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
 
-
-
-
- .networkContainer {
-	margin: 1em 1em 10em 1em;
-	border: 1px solid lightgray;
- }
+.networkContainer {
+  margin: 1em 1em 10em 1em;
+  border: 1px solid lightgray;
+}
 
 .highlight-overlay {
   background-color: green; /* color elements as green */
@@ -28,3 +25,63 @@
 }
 */
 
+/* Styles for the Main page */
+
+/* Navbar */
+.navbar-background {
+  background-color: white;
+}
+.gradient-font {
+  background: linear-gradient(to top left, #28b487 0%, #7dd56f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Title */
+#title {
+  background: linear-gradient(to top left, #28b487 0%, #7dd56f 100%);
+}
+
+.title-heading {
+  font-family: "Comfortaa", cursive;
+  color: white;
+  font-weight: 900;
+  font-size: 3.5rem;
+  margin-top: 5%;
+  margin-left: 20%;
+  margin-bottom: 15%;
+}
+
+.title-subheading {
+  color: white;
+  margin-top: 5%;
+  margin-left: 20%;
+  margin-bottom: 15%;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.title-container {
+  padding: 5% 15%;
+}
+
+.title-image {
+  transform: rotate(25deg);
+  width: 110%;
+  height: 90%;
+}
+
+#features {
+  padding: 10% 15%;
+}
+
+.feature-box {
+  text-align: center;
+}
+.feature-icon {
+  padding-bottom: 3rem;
+}
+
+.feature-icon:hover {
+  color: pink;
+}

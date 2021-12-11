@@ -1,41 +1,85 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-	<div class="container-fluid">
-		<a class="navbar-brand" href="#">Navbar</a>
-		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01"
-			aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
-			<span class="navbar-toggler-icon"></span>
-		</button>
+<nav class="navbar navbar-expand-lg gradient-font navbar-background">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Process</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarColor01"
+      aria-controls="navbarColor01"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-		<div class="collapse navbar-collapse" id="navbarColor01">
-			<ul class="navbar-nav me-auto">
-				<li class="nav-item">
-					<a class="nav-link active" href="#">Home
-						<span class="visually-hidden">(current)</span>
-					</a>
-				</li>
-				<li class="nav-item">
-					<a class="nav-link" href="#">Change Visualizer</a>
-				</li>
-			</ul>
-		</div>
-	</div>
+    <div class="collapse navbar-collapse" id="navbarColor01">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link active" href="#"
+            >Home
+            <span class="visually-hidden">(current)</span>
+            <i class="fas fa-home"></i>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#"
+            >Change Visualizer
+            <i class="fas fa-search"></i>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
 </nav>
-
+<section id="title">
+  <div class="container-fluid title-container">
+    <div class="row">
+      <div class="col-lg-6 col-md-12 col-sm-12">
+        <h1 class="title-heading">Title!</h1>
+        <h3 class="title-subheading">Visualize Process Changes on the Fly</h3>
+      </div>
+      <div class="col-lg-6 col-md-12 col-sm-12">
+        <img
+          class="title-image"
+          src="assets/css/processmodel.svg"
+          alt="Process-mockup"
+        />
+      </div>
+    </div>
+  </div>
+</section>
+<section id="features">
+  <div class="row">
+    <div class="feature-box col-lg-4 gradient-font">
+      <i class="fas fa-coins feature-icon fa-5x"></i>
+      <h3>100% Free!</h3>
+    </div>
+    <div class="feature-box col-lg-4 gradient-font">
+      <i class="fas fa-check-double feature-icon fa-5x"></i>
+      <h3>Easy To Use!</h3>
+    </div>
+    <div class="feature-box col-lg-4 gradient-font">
+      <i class="fas fa-heart feature-icon fa-5x"></i>
+      <h3>Build with Love!</h3>
+    </div>
+  </div>
+</section>
 
 <div class="content" role="main">
-
-	<router-outlet></router-outlet>
-
+  <router-outlet></router-outlet>
 </div>
 
-
-<div class="card text-white bg-dark mb-3" style="width: 100%; margin: 0 0 0 0 !important">
-	<div class="card-header"></div>
-	<div class="card-body">
-		<h4 class="card-title">Sample Footer</h4>
-		<p class="card-text">
-			No idea whats wrong. <br>
-			but this should work.
-		</p>
-	</div>
+<div
+  class="card text-white bg-dark mb-3"
+  style="width: 100%; margin: 0 0 0 0 !important"
+>
+  <div class="card-header"></div>
+  <div class="card-body">
+    <h4 class="card-title">Sample Footer</h4>
+    <p class="card-text">
+      No idea whats wrong. <br />
+      but this should work.
+    </p>
+  </div>
 </div>
