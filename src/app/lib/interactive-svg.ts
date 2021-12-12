@@ -60,6 +60,7 @@ export class InteractiveSVG {
 		this.selectedElementForDrag = null;
 		this.coloredMarkers = markers;
 
+
 		this.svgContainer.addEventListener('pointerdown', (event: any) => {
 
 			// start dragging if draggable
@@ -189,9 +190,6 @@ export class InteractiveSVG {
 			buttonGroup.appendChild(button);
 		}
 		this.svgContainer.appendChild(buttonGroup);
-
-
-
 	}
 
 	public applySVGMatrixTransformations(element: SVGElement | SVGPathElement, translateX, translateY, rotateAngle, scaleFactor): void {
@@ -206,10 +204,11 @@ export class InteractiveSVG {
 
 	private zoom = (scale: number): void => {
 		// TODO: at best give svg a viewbox that fits the whole process. and then get center from viewbox.
+		let viewBox = this.svgContainer.getAttributeNS(null, "viewBox")?.split(" ") ?? [];
 		let graphicsBox = (this.matrixGroup as SVGGraphicsElement).getBBox();
 		let domRenderedBox = this.matrixGroup.getBoundingClientRect();
-		let centerX = domRenderedBox.width / 2;
-		let centerY = domRenderedBox.height / 2;
+		let centerX = parseFloat(viewBox[2]) / 2;//domRenderedBox.width / 2;
+		let centerY = parseFloat(viewBox[3]) / 2;domRenderedBox.height / 2;
 
 		let modifiedScale = this.currentScale * scale;
 		if (modifiedScale >= 2.0) {
@@ -244,8 +243,13 @@ export class InteractiveSVG {
 		};
 	}
 
-	public addSVGElement(element: SVGElement): void {
+	public addSVGElement(element: SVGElement, recalculateSVGViewFit: boolean = false): void {
 		this.matrixGroup.appendChild(element);
+
+		if (recalculateSVGViewFit) {
+			const rect = (this.matrixGroup as SVGGraphicsElement).getBBox();
+			this.svgContainer.setAttributeNS(null, "viewBox", (rect.x - 20) + " " + (rect.y - 20) + " " + (rect.width + 40) + " " + (rect.height + 40))
+		}
 	}
 	
 	public createSVGGroup(id: string, setIdentityTransform: boolean, ...elements: (SVGElement | SVGPathElement)[]): SVGElement {

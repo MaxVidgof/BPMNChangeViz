@@ -41,6 +41,7 @@ export class ProcessChangeModel {
 			//new SVGUIButton('', 'Select Single', 'fill: #007bbf; pointer: cursor;', () => {}, () => {}, () => {})
 		]);
 		this.moddleObj = moddleObj;
+
 	}
 
 	public getElements = (): BPMNElement[] => {
@@ -76,7 +77,7 @@ export class ProcessChangeModel {
 		//add svg element and link bpmn model to it.
 		if (correspondingSVGElement != null) {
 			element.svg = correspondingSVGElement;
-			this.interactiveSVG.addSVGElement(correspondingSVGElement);
+			this.interactiveSVG.addSVGElement(correspondingSVGElement, true);
 		}
 	}
 
