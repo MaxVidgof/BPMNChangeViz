@@ -11,20 +11,6 @@
   pointer-events: none; /* no pointer events, allows clicking through onto the element */
 }
 
-/* animated path dashes */
-/*
-.path {
-  stroke-dasharray: 300 90;
-  stroke-dashoffset: 0;
-  animation: dash 10s linear infinite;
-}
-@keyframes dash {
-  to {
-    stroke-dashoffset: -1000;
-  }
-}
-*/
-
 /* Styles for the Main page */
 
 /* Navbar */
@@ -47,15 +33,13 @@
   color: white;
   font-weight: 900;
   font-size: 3.5rem;
-  margin-top: 5%;
-  margin-left: 20%;
-  margin-bottom: 15%;
+  padding-left: 20%;
 }
 
 .title-subheading {
   color: white;
   margin-top: 5%;
-  margin-left: 20%;
+  padding-left: 20%;
   margin-bottom: 15%;
   font-size: 1.5rem;
   font-weight: 800;
@@ -67,12 +51,15 @@
 
 .title-image {
   transform: rotate(25deg);
-  width: 110%;
-  height: 90%;
+  position: absolute;
+  width: 55%;
+  left: 40%;
 }
 
 #features {
   padding: 10% 15%;
+  position: relative;
+  z-index: 1;
 }
 
 .feature-box {
@@ -80,8 +67,38 @@
 }
 .feature-icon {
   padding-bottom: 3rem;
+  color: linear-gradient(#28b487, #7dd56f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.feature-icon:hover {
-  color: pink;
+#footer {
+  padding-top: 3.5%;
+}
+
+.footer-container {
+  text-align: center;
+}
+
+.social-icon {
+  margin: 20px 10px;
+}
+
+@media (max-width: 990px) {
+  #title {
+    text-align: center;
+  }
+
+  .title-image {
+    position: static;
+    width: 100%;
+    transform: rotate(15);
+  }
+  .title-heading {
+    padding-left: 5%;
+  }
+
+  .title-subheading {
+    padding-left: 5%;
+  }
 }
