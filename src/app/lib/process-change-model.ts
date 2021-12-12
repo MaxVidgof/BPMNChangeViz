@@ -19,6 +19,8 @@ export class ProcessChangeModel {
 	// thats all we need.
 
 	name: string;
+	originalXml: string = '';
+
 	private elements: BPMNElement[] = [];
 	private interactiveSVG: InteractiveSVG;
 	private moddleObj: any;
@@ -91,7 +93,7 @@ export class ProcessChangeModel {
 			strokeWidth: "2px",
 			strokeLinejoin: 'round',
 			strokeDasharray: element.type === BPMNEdgeType.MessageFlow ? ' 10,12' : '',
-			markerStart: "url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === arrowFootName)?.id + ");",
+			markerStart: element.type === BPMNEdgeType.MessageFlow ? "url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === arrowFootName)?.id + ");" : undefined,
 			markerEnd: "url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === arrowHeadName)?.id + ");"
 		};
 
@@ -476,13 +478,13 @@ export abstract class BPMNElement {
 
 		if (this.svg) {
 			if (this.changeType === ElementChangeType.Added) {
-				config.fill = 'rgba(30, 217, 45, 0.9)';
-				config.stroke = 'rgba(13, 115, 21, 0.9)';
-				config.strokeWidth = "15px";
+				config.fill = 'rgba(30, 217, 45, 0.7)';
+				config.stroke = 'rgba(13, 115, 21, 0.7)';
+				config.strokeWidth = "9px";
 			} else if (this.changeType === ElementChangeType.Removed) {
-				config.fill = 'rgba(227, 39, 39, 0.9)';
-				config.stroke = 'rgba(112, 2, 2, 0.9)';
-				config.strokeWidth = "15px";
+				config.fill = 'rgba(227, 39, 39, 0.7)';
+				config.stroke = 'rgba(112, 2, 2, 0.7)';
+				config.strokeWidth = "9px";
 			}
 
 			if (this instanceof BPMNEdge) {

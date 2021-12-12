@@ -1,25 +1,49 @@
 <div class="container">
 	<h1 style="padding: 2em 0em 2em 0em">Process Change Visualizer</h1>
 
-	<!-- bpmn js -->
-	<div id="myBpmnNetwork" class="networkContainer" style="width: 40em; height: 30em"></div>
+	<!-- bpmn js  TODO: remove when not needed anymore-->
+	<!-- <div id="myBpmnNetwork" class="networkContainer" style="width: 40em; height: 30em"></div> -->
 
 	<!-- our 2 SVGs for processes -->
 	<div class="container">
 		<div class="row align-items-start">
-			<h3>Process Before</h3>
+
 			<div class="col">
-				<!-- SVG's must remain - everything else can be changed  -->
-				<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGBefore" width="40em"
-					height="30em"></svg>
+				<h3>Process Before</h3>
+				<input class="form-control" type="file" id="processBeforeFile" style="max-width: 80%">
 			</div>
 
-			<h3>Process After</h3>
+			<div class="col">
+				<h3>Process After</h3>
+				<input class="form-control" type="file" id="processAfterFile" style="max-width: 80%">
+			</div>
+
+		</div>
+	</div>
+
+	<div class="container">
+		<div class="row align-items-start">
+
 			<div class="col">
 				<!-- SVG's must remain - everything else can be changed  -->
-				<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGAfter" width="40em"
-					height="30em"></svg>
+				<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGBefore" width="27em" height="20em"></svg>
+			</div>
+
+			<div class="col">
+				<!-- SVG's must remain - everything else can be changed  -->
+				<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGAfter" width="27em" height="20em"></svg>
 			</div>
 		</div>
 	</div>
+
+	<button type="button" (click)="calculateChangesAndVisualize()" class="btn btn-outline-info">
+		<span *ngIf="loading===true" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+		Generate Change Visualization
+	</button>
+
+	<div class="container">
+		<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGFinal" width="60em" height="40em"></svg>
+	</div>
+
+	<button type="button" style="margin-bottom: 3em" (click)="export()" class="btn btn-outline-info">Export to DOT</button>
 </div>

@@ -219,20 +219,6 @@ export class InteractiveSVG {
 		this.currentScale *= scale;
 
 		this.applySVGMatrixTransformations(this.matrixGroup, (1 - scale) * centerX, (1 - scale) * centerY, 0, scale);
-
-		/*
-		let matrixRaw = this.matrixGroup.getAttributeNS(null, "transform");
-		let matrix = matrixRaw?.replace("matrix(", "").replace(")", "").split(" ");
-		if (matrix) {
-			for (var i = 0; i < 4; i++) {
-				matrix[i] = "" + (parseFloat(matrix[i]) * scale);
-			}
-			
-			matrix[4] = "" + (parseFloat(matrix[4]) + (1 - scale) * centerX);
-			matrix[5] = "" + (parseFloat(matrix[5]) + (1 - scale) * centerY);
-			this.matrixGroup.setAttributeNS(null, "transform", "matrix(" +  matrix.join(' ') + ")");
-		}
-		*/
 	}
 
 	private getMousePosition = (evt): {x: number, y: number} => {
