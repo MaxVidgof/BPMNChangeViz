@@ -13,7 +13,7 @@ import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 
 
 import ctExtension from '../lib/meta-model-extension.json';
-import { BPMNEdge, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ElementChangeType, ProcessChangeModel } from '../lib/process-change-model';
+import { BPMNEdge, BPMNEdgeType, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ElementChangeType, ProcessChangeModel } from '../lib/process-change-model';
 import { take } from 'rxjs';
 
 @Component({
@@ -55,6 +55,14 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		const pcmAfter = await this.buildProcessChangeModelFromModdle(processAfter, containerProcessAfter);
 
 		console.log(pcmBefore);
+
+
+
+		// Test check for changes.
+		pcmAfter.takeOverAndNoteChangesFromEarlierProcessChangeModel(pcmBefore);
+		this.downloadStringAsFile(pcmAfter.name + ".txt", pcmAfter.exportToDOTLanguage());
+
+
 
 		// TODO: for future: finally export our process again maybe with the moddle
 		const ourProcess = processBefore.rootElement.get('diagrams')[0].plane.bpmnElement;
@@ -101,8 +109,9 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				}
 			}
 
-			if (el.$type === 'bpmn:SequenceFlow') {
-				toAdd = new BPMNEdge(el.id);
+			if (el.$type === 'bpmn:SequenceFlow' || el.$type === 'bpmn:MessageFlow') {
+				const typ = el.$type === 'bpmn:SequenceFlow' ? BPMNEdgeType.SequenceFlow : BPMNEdgeType.MessageFlow;
+				toAdd = new BPMNEdge(el.id, typ);
 
 				//waypoints are absolute in bpmn-js
 				(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
@@ -145,23 +154,24 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 		}
 
-		console.log(pcm.getElements().length);
 		for (const pr of stuffTodoAfterElementsWereAdded) {
 			pr();
 		}
 		await Promise.all(stuffTodoAfterElementsWereAdded);
 
-
-
-		// TEST
-		console.log("################################");
-		[0, 2, 4, 7, 8, 15, 18, 20, 24].forEach(ind => pcm.getElements()[ind].setChange(ElementChangeType.Added));
-		[2, 3, 9, 12, 17, 19, 25].forEach(ind => pcm.getElements()[ind].setChange(ElementChangeType.Removed));
-
-		console.log(pcm.exportToDOTLanguage());
-
-
 		return pcm;
+	}
+
+	public downloadStringAsFile(filename: string, text: string): void {
+
+		var element = document.createElement('a');
+		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+		element.setAttribute('download', filename);
+		element.style.display = 'none';
+		document.body.appendChild(element);
+		
+		element.click();
+		document.body.removeChild(element);
 	}
 
 	public async testBpmnViewer(xml: string): Promise<void> {
@@ -235,8 +245,8 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		let myTestXml = '';
 		let myTestXml2 = '';
 
-		myTestXml = await this.doSimpleGETRequest('/assets/test-process-bigger.bpmn');
-		myTestXml2 = await this.doSimpleGETRequest('/assets/test-process-bigger.bpmn');
+		myTestXml = await this.doSimpleGETRequest('/assets/event-planning-process.bpmn');
+		myTestXml2 = await this.doSimpleGETRequest('/assets/event-planning-process-changed.bpmn');
 
 		// bpmn-js
 		await this.testBpmnViewer(myTestXml2);

@@ -8,6 +8,9 @@ import { style } from "@angular/animations";
 import { platformCore } from "@angular/core";
 import { ColoredMarker, InteractiveSVG, SVGUIButton } from "./interactive-svg";
 
+import {findBestMatch, compareTwoStrings} from "string-similarity"
+
+
 // about the process plus change. So that we can later easily visualize it and export it.
 export class ProcessChangeModel {
 
@@ -23,9 +26,17 @@ export class ProcessChangeModel {
 	constructor(name: string, svgContainer: HTMLElement, moddleObj: any) {
 		this.name = name;
 		this.interactiveSVG = new InteractiveSVG(svgContainer, [
-			new ColoredMarker('sequenceflow-end-white-black-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Black', "fill: black; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: black;", "M 1 5 L 11 10 L 1 15 Z"),
-			new ColoredMarker('sequenceflow-end-red-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Red', "fill: red; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: red;", "M 1 5 L 11 10 L 1 15 Z"),
-			new ColoredMarker('sequenceflow-end-green-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Green', "fill: green; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: green;", "M 1 5 L 11 10 L 1 15 Z")
+			// SequenceFlow End
+			new ColoredMarker('sequenceflow-end-white-black-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Black', "11", "10", "fill: black; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: black;", "M 1 5 L 11 10 L 1 15 Z"),
+			new ColoredMarker('sequenceflow-end-red-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Red', "11", "10",  "fill: red; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: red;", "M 1 5 L 11 10 L 1 15 Z"),
+			new ColoredMarker('sequenceflow-end-green-doq2fvopnj4c3h1erjbstx8an', 'FlowEnd ArrowHead Green', "11", "10",  "fill: green; stroke-width: 1px; stroke-linecap: round; stroke-dasharray: 10000, 1; stroke: green;", "M 1 5 L 11 10 L 1 15 Z"),
+		
+			//MessageFlow End
+			new ColoredMarker('messageflow-end-white-black-bt4ep41bxmkomwvfg0iplb4ay', 'MessageEnd ArrowHead White', "8.5", "5",  "fill: white; stroke-width: 1px; stroke-linecap: butt; stroke-dasharray: 10000, 1; stroke: black;", "m 1 5 l 0 -3 l 7 3 l -7 3 z"),
+
+			//MessageFlow Start
+			new ColoredMarker('messageflow-start-white-black-bt4ep41bxmkomwvfg0iplb4ay', 'MessageStart Point White', "6", "6",  "fill: white; stroke-width: 1px; stroke-linecap: butt; stroke-dasharray: 10000, 1; stroke: black;", "circle")
+
 		], [
 			//new SVGUIButton('', 'Select Single', 'fill: #007bbf; pointer: cursor;', () => {}, () => {}, () => {})
 		]);
@@ -55,7 +66,7 @@ export class ProcessChangeModel {
 				console.warn("TODO!");
 			}
 		} else if (element instanceof BPMNEdge) {
-			correspondingSVGElement = this.createPathShapeByWaypoints(element);
+			correspondingSVGElement = this.createEdgeShapeByWaypoints(element);
 		} else if(element instanceof BPMNTextAnnotation) {
 			correspondingSVGElement = this.createRectangleTextAnnotation(element);
 		} else if(element instanceof BPMNParticipant) {
@@ -69,11 +80,27 @@ export class ProcessChangeModel {
 		}
 	}
 
-	private createPathShapeByWaypoints = (element: BPMNEdge): SVGElement => {
+	private createEdgeShapeByWaypoints = (element: BPMNEdge): SVGElement => {
+
+		let arrowHeadName = element.type === BPMNEdgeType.MessageFlow ? 'MessageEnd ArrowHead White' : 'FlowEnd ArrowHead Black';
+		let arrowFootName = element.type === BPMNEdgeType.MessageFlow ? 'MessageStart Point White' : 'FlowEnd ArrowHead Black';
+		let style: Partial<CSSStyleDeclaration> = {
+			fill: 'none',
+			stroke: 'black',
+			strokeWidth: "2px",
+			strokeLinejoin: 'round',
+			strokeDasharray: element.type === BPMNEdgeType.MessageFlow ? ' 10,12' : '',
+			markerStart: "url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === arrowFootName)?.id + ");",
+			markerEnd: "url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === arrowHeadName)?.id + ");"
+		};
+
+		// since there seems no way to compute CSS text from partial style declaration,
+		// you should get comfortable with regexes.
+		let styleStr = Object.keys(style).map(key => key.replace(/([A-Z])/, "-$1".toLowerCase()) + ": " + style[key]).join(";");
 
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
 			this.interactiveSVG.createPathByWaypoints("", false, false,
-				element.diagramShape.waypoints, false, "fill: none; stroke: black; stroke-width: 3px; stroke-linejoin: round; marker-end: url(#" + this.interactiveSVG.coloredMarkers.find(m => m.name === 'FlowEnd ArrowHead Black')?.id + ");", "styler")
+				element.diagramShape.waypoints, false, styleStr, "styler")
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, 0, 0, 0, 1.0);
 		return correspondingSVGElement;	
@@ -98,7 +125,7 @@ export class ProcessChangeModel {
 		let pathIcon = 'm 0, 0 m 10,0 l -10,0 l 0,30 l 10,0';
 
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
-			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black', 0, "styler"),
+			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
 			this.interactiveSVG.createPathByString('', false, false, pathIcon,
 			'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 1px;', ""),
@@ -119,7 +146,7 @@ export class ProcessChangeModel {
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
 			this.interactiveSVG.createRectangle(element.id, false, false, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 3px', "styler"),
 			this.interactiveSVG.createPathByString('', false, false, path, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 3px;', "styler"),
-			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramLine.x1 / 2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black', 270, "styler")
+			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramLine.x1 / 2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 270, "styler")
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x, element.diagramShape.y, 0, 1);
 
@@ -141,7 +168,7 @@ export class ProcessChangeModel {
 		let elementsInGroup: (SVGElement | SVGPathElement)[] = [
 			this.interactiveSVG.createRectangle('', false, false, 0, 0, element.diagramShape.width,
 				element.diagramShape.height, 'fill: white; stroke: black; stroke-width: 3px;', "styler"),
-			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black', 0, "styler"),
+			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
 			...pathIcons.map(icon => this.interactiveSVG.createPathByString('', false, false, icon, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 1px;', "styler")),
 		];
@@ -173,41 +200,96 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;					
 	}
 
-	public takeOverAndNoteChangesFromOtherProcessChangeModel = (otherPcm: ProcessChangeModel): void => {
-		// TODO:
-		// we have to find out differences to the other pcm.
-		//like elements that have the same id but different property.
-		const ids1 = this.elements.map(el => el.id);
-		const ids2 = otherPcm.elements.map(el => el.id);
+	public takeOverAndNoteChangesFromEarlierProcessChangeModel = (otherPcm: ProcessChangeModel): void => {
+		
+		
+		console.log("############### We are going to find some changes, yahoo.");
+		
 
+		// METHOD 1 -- Find differences in ids.
+		// check elements that we habve but not the other (added)
+		// and check elements that the other has but not us (removed)
 		for (const el of this.elements) {
 			let elementInOtherWithSameId = otherPcm.elements.find(e => e.id === el.id);
-			if (elementInOtherWithSameId) {
-				console.log('found an element by id, existing in both processes.');
-				// TODO: explore changes.
-				// but i fear the ids are totally random.
-				//maybe find another approach.
+			if (!elementInOtherWithSameId) {
+				console.log('# found an id that is not existent in the other pcm.');
+				el.setChange(ElementChangeType.Added);
+			}
+		}
+		for (const el of otherPcm.elements) {
+			let elementInMeWithSameId = this.elements.find(e => e.id === el.id);
+			if (!elementInMeWithSameId) {
+				console.log('# found an id that is not existent in me, but the other pcm.');
+				this.addElement(el);
+				el.setChange(ElementChangeType.Removed);
 			}
 		}
 
 
+
+		// METHOD 2 -- Graph REachability and Isomorphism.
+		//TODO
 		// 	one part of the problem is graph isomorphism, but we probably wont look at that complex problem.
 
+		// METHOD 3 -- Find differences in descriptions
 		// if there is an activity doing X, do we find an activity doing X in the second process?
+		for (const el of this.elements.filter(el => el instanceof BPMNNode && el.description.length > 0)) {
+			let txt = el.description;
+			let otherTxts = otherPcm.elements.filter(el => el.description.length > 0).map(e => e.description);
+			let matches = findBestMatch(txt, otherTxts);
+			if (matches.bestMatch.rating < 0.91) {
+				console.log("found no element in other with same name as in me.", el.description);
+				el.setChange(ElementChangeType.Added);
+			}
+		}
+		for (const el of otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
+			let txt = el.description;
+			let otherTxts = this.elements.filter(e => e.description.length > 0).map(e => e.description);
+			let matches = findBestMatch(txt, otherTxts);
+			if (matches.bestMatch.rating < 0.91) {
+				console.log("found no element in me with same name as in other.", el.description);
+				this.addElement(el);
+				const elementsThatCouldBeRightThere = this.elements.filter(ele => ele instanceof BPMNNode &&
+					this.getRectangleIntersectionArea(ele.diagramShape, (el as BPMNNode).diagramShape) > 0.7)
+				console.log("###", elementsThatCouldBeRightThere.length)
+
+				//TODO
+				// check if some tasks/activities overlap heavily. Could be the case they just got replaced.
+				if (elementsThatCouldBeRightThere.length > 0) {
+
+				}
+
+				// so far we just translate the removed element so we see whats going on.
+				elementsThatCouldBeRightThere.forEach(ll => this.interactiveSVG.applySVGMatrixTransformations(el.svg ?? new SVGElement(), 15, 15, 0, 1));
+				
+				el.setChange(ElementChangeType.Removed);
+			}
+		}
+
+		// METHOD 4 -- find chains of activities doing the same stuff.
+		// More of a subproblem. Find multiple activities that accomplish smth together.
+		// TODO
 		// if there is a loop involving some activities, do we find a loop involving such in the second process?
 
 
+		console.log("############### We hopefully found some changes, yahoooo.");
+	}
 
-		// we want to modify this class here according to changes we see in the otherPcm.
-
-		// STEP 2: then is to color those changes meaningfully. But first try to detect all changes.
+	private getRectangleIntersectionArea(a: {x: number, y: number, width: number, height: number},
+										b: {x: number, y: number, width: number, height: number}): number {
+		let dx = Math.max(0, Math.min(a.x+a.width, b.x+b.width) - Math.max(a.x, b.x));
+		let dy = Math.max(0, Math.min(a.y+a.height, b.y+b.height) - Math.max(a.y, b.y));
+		let absoluteOverlap = Math.abs(dx) * Math.abs(dy);
+		
+		let percentageOverlap = Math.max(absoluteOverlap / (a.width*a.height), absoluteOverlap / (b.width, b.height)) / 100;
+		return percentageOverlap;
 	}
 
 	public exportToDOTLanguage(): string {
 		let lfcr = "\r\n";
-		let cGreen = "30, 217, 45";
-		let cRed = "227, 39, 39";
-		let cBlack = "0, 0, 0";
+		let cGreen = "#1ed92d";
+		let cRed = "#e32727";
+		let cBlack = "#000000";
 
 		let str = "digraph " + this.name.replace(" ", "") + "{" + lfcr;
 		for (const el of this.elements.filter(e => e instanceof BPMNNode)) {
@@ -260,6 +342,10 @@ export type BPMNNodeTypeEntry = {
 	iconPaths: string[];
 }
 
+export enum BPMNEdgeType {
+	"MessageFlow",
+	"SequenceFlow"
+}
 
 export enum BPMNNodeType {
 	"StartEvent",
@@ -437,11 +523,13 @@ export class BPMNNode extends BPMNElement {
 
 export class BPMNEdge extends BPMNElement {
 	diagramShape: DiagramPath;
+	type: BPMNEdgeType;
 	output: BPMNNode | null = null;
 	input: BPMNNode | null = null;
 
-	constructor(id: string) {
+	constructor(id: string, type: BPMNEdgeType) {
 		super(id);
+		this.type = type;
 		this.diagramShape = {
 			waypoints: []
 		}

@@ -1,5 +1,3 @@
-import * as LinAlg from 'linear-algebra/dist/linear-algebra.min.js';
-//const LinAlg = require('linear-algebra')();
 
 export class ColoredMarker {
 
@@ -7,12 +5,16 @@ export class ColoredMarker {
 	name: string;
 	style: string;
 	path: string;
+	refX: string;
+	refY: string;
 
-	constructor(id: string, name: string, style: string, path: string) {
+	constructor(id: string, name: string, refX: string, refY: string, style: string, path: string) {
 		this.id = id;
 		this.name = name;
 		this.style = style;
 		this.path = path;
+		this.refX=refX;
+		this.refY=refY;
 	}
 }
 
@@ -136,22 +138,34 @@ export class InteractiveSVG {
 		this.svgContainer.appendChild(newGroup);
 		this.matrixGroup = newGroup;
 
+
+
 		// create arrowhead marker
 		let defs = document.createElementNS("http://www.w3.org/2000/svg", 'defs');
-		for (const m of markers) {
+		for (const m of this.coloredMarkers) {
 			let marker = document.createElementNS("http://www.w3.org/2000/svg", 'marker');
 			marker.setAttributeNS(null, "id", m.id);
 			marker.setAttributeNS(null, "viewBox", "0 0 20 20");
-			marker.setAttributeNS(null, "refX", "11");
-			marker.setAttributeNS(null, "refY", "10");
+			marker.setAttributeNS(null, "refX", m.refX);
+			marker.setAttributeNS(null, "refY", m.refY);
 			marker.setAttributeNS(null, "markerWidth", "30");
 			marker.setAttributeNS(null, "markerHeight", "30");
 			marker.setAttributeNS(null, "orient", "auto");
 			marker.setAttributeNS(null, "markerUnits", "userSpaceOnUse");
-				let path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-				path.setAttributeNS(null, "d", m.path);
-				path.setAttributeNS(null, "style", m.style);
-				marker.appendChild(path);
+
+				let child = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+				if (m.path === 'circle') {
+					child = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+					child.setAttributeNS(null, "cx", "6");
+					child.setAttributeNS(null, "cy", "6");
+					child.setAttributeNS(null, "r", "3.5");
+					child.setAttributeNS(null, "style", m.style);
+				} else {
+					child = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+					child.setAttributeNS(null, "d", m.path);
+					child.setAttributeNS(null, "style", m.style);
+				}
+				marker.appendChild(child);
 			defs.appendChild(marker);
 		}
 		this.svgContainer.appendChild(defs);
