@@ -50,6 +50,12 @@ export class ProcessChangeModel {
 		return this.elements;
 	}
 
+	public destroy = (): void => {
+		this.interactiveSVG.destroy();
+		this.elements = [];
+		this.moddleObj = null;
+	}
+
 	public addElement = (element: BPMNElement): void => {
 		this.elements.push(element);
 
@@ -101,9 +107,31 @@ export class ProcessChangeModel {
 		// you should get comfortable with regexes.
 		let styleStr = Object.keys(style).map(key => key.replace(/([A-Z])/, "-$1".toLowerCase()) + ": " + style[key]).join(";");
 
+		//try to figure out where to put the symbol next to the path.
+		let icondestination = {x: 0, y: 0}
+		if (element.diagramShape.waypoints.length > 0) {
+			let lastDx = element.diagramShape.waypoints[element.diagramShape.waypoints.length - 1].x - element.diagramShape.waypoints[element.diagramShape.waypoints.length - 2].x;
+			let lastDy = element.diagramShape.waypoints[element.diagramShape.waypoints.length - 1].y - element.diagramShape.waypoints[element.diagramShape.waypoints.length - 2].y;
+			
+			icondestination.x = element.diagramShape.waypoints[element.diagramShape.waypoints.length - 1].x;
+			icondestination.y = element.diagramShape.waypoints[element.diagramShape.waypoints.length - 1].y;
+			if (Math.abs(lastDx) > Math.abs(lastDy)) {
+				icondestination.x -= 30 * Math.sign(lastDx);
+				icondestination.y -= 15 * Math.sign(lastDx);
+			} else {
+				icondestination.x += 15 * Math.sign(lastDy);
+				icondestination.y -= 30 * Math.sign(lastDy);
+			}
+		}
+
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
 			this.interactiveSVG.createPathByWaypoints("", false, false,
-				element.diagramShape.waypoints, false, styleStr, "styler")
+				element.diagramShape.waypoints, false, styleStr, "styler"),
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: icondestination.x - 10,
+				y: icondestination.y - 10,
+				width: 20, height: 20
+			}, '', 'change-icon')
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, 0, 0, 0, 1.0);
 		return correspondingSVGElement;	
@@ -112,9 +140,14 @@ export class ProcessChangeModel {
 	private createRoundEventShape = (element: BPMNNode): SVGElement => {
 
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
-			this.interactiveSVG.createCircle(element.id, true, false, 0, 0,
+			this.interactiveSVG.createCircle('', true, true, 0, 0,
 										element.diagramShape.width / 2,
-										'fill: white; stroke: black; stroke-width: 3px;', "styler")
+										'fill: white; stroke: black; stroke-width: 3px;', "styler"),
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: -element.diagramShape.width/2 / 3,
+				y: -element.diagramShape.height / 2,
+				width: 30, height: 30
+			}, '', 'change-icon')
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x + element.diagramShape.width / 2, element.diagramShape.y + element.diagramShape.height / 2, 0, 1.0);
 		return correspondingSVGElement;					
@@ -132,6 +165,11 @@ export class ProcessChangeModel {
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
 			this.interactiveSVG.createPathByString('', false, false, pathIcon,
 			'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 1px;', ""),
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: element.diagramShape.width * (6/10),
+				y: -element.diagramShape.height * (1/10),
+				width: 35, height: 35
+			}, '', 'change-icon')
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x, element.diagramShape.y, 0, 1);
 		
@@ -149,7 +187,12 @@ export class ProcessChangeModel {
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
 			this.interactiveSVG.createRectangle(element.id, false, false, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 3px', "styler"),
 			this.interactiveSVG.createPathByString('', false, false, path, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 3px;', "styler"),
-			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramLine.x1 / 2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 270, "styler")
+			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramLine.x1 / 2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 270, "styler"),
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: element.diagramShape.width * (19/20),
+				y: -element.diagramShape.height * (1/20),
+				width: 35, height: 35
+			}, '', 'change-icon')
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x, element.diagramShape.y, 0, 1);
 
@@ -174,6 +217,11 @@ export class ProcessChangeModel {
 			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
 			...pathIcons.map(icon => this.interactiveSVG.createPathByString('', false, false, icon, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 1px;', "styler")),
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: element.diagramShape.width * (7/10),
+				y: -element.diagramShape.height * (1/10),
+				width: 35, height: 35
+			}, '', 'change-icon')
 		];
 		if (element.type === BPMNNodeType.CallActivity) {
 			const rect: SVGRectElement = this.interactiveSVG.createRectangle('', false, false, 0, 0, 14, 14, 'fill: none; stroke: black; stroke-width: 1.5px;', "styler");
@@ -196,7 +244,12 @@ export class ProcessChangeModel {
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
 			this.interactiveSVG.createRotSquare('', false, false, 0, 0, element.diagramShape.width /2, 'stroke: black; stroke-width: 2px; fill: white; fill-opacity: 0.95;', "styler"),
 			...pathIcons.map(icon => this.interactiveSVG.createPathByString('', false, false, icon, 'fill: black; stroke: black; stroke-width: 1px;', "styler")),
-			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', "")
+			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: element.diagramShape.width * (4/10),
+				y: -element.diagramShape.height * (1/10),
+				width: 35, height: 35
+			}, '', 'change-icon')
 		);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x, element.diagramShape.y, 0, 1);
 
@@ -338,6 +391,15 @@ export enum ElementChangeType {
 	"DecreasedTraffic"
 }
 
+export const ElementChangeIconsMapping: Map<ElementChangeType, string> = new Map([
+	[ElementChangeType.NONE, ""],
+	[ElementChangeType.Added, "/assets/symbols/added512.png"],
+	[ElementChangeType.Removed, "/assets/symbols/removed512.png"],
+	[ElementChangeType.IncreasedTraffic, "/assets/symbols/increased512.png"],
+	[ElementChangeType.DecreasedTraffic, "/assets/symbols/decreased512.png"],
+]);
+
+
 
 export type BPMNNodeTypeEntry = {
 	bpmnIoType: string;
@@ -416,7 +478,8 @@ export interface DiagramPath {
 export abstract class BPMNElement {
 	lastChangedISO: string = new Date().toISOString();
 	description: string = "";
-	styleConfig: ElementStyleConfig;
+	//styleConfig: ElementStyleConfig;
+	traffic: number = 0;
 	id: string;
 	svg: SVGElement | null = null;
 
@@ -425,38 +488,6 @@ export abstract class BPMNElement {
 	constructor(id: string) {
 		this.id = id;
 		this.changeType = ElementChangeType.NONE;
-
-		if (this instanceof BPMNNode) {
-			this.styleConfig = {
-				fill: 'white',
-				stroke: 'black',
-				strokeWidth: "3px"
-			}
-		} else if (this instanceof BPMNEdge) {
-			this.styleConfig = {
-				fill: 'none',
-				stroke: 'black',
-				strokeWidth: "2px"
-			}
-		} else if (this instanceof BPMNParticipant) {
-			this.styleConfig = {
-				fill: 'none',
-				stroke: 'black',
-				strokeWidth: "2px"
-			}
-		} else if (this instanceof BPMNTextAnnotation) {
-			this.styleConfig = {
-				fill: 'none',
-				stroke: 'black',
-				strokeWidth: "2px"
-			}
-		} else {
-			this.styleConfig = {
-				fill: 'none',
-				stroke: 'black',
-				strokeWidth: "2px"
-			}
-		}
 	}
 
 	public getChangeType(): ElementChangeType {
@@ -473,7 +504,8 @@ export abstract class BPMNElement {
 		let config: ElementStyleConfig = {
 			fill: "none",
 			stroke: "black",
-			strokeWidth: "3px"
+			strokeWidth: "3px",
+			indicatorIcon: ElementChangeIconsMapping.get(this.changeType) ?? ''
 		}
 
 		if (this.svg) {
@@ -503,6 +535,8 @@ export abstract class BPMNElement {
 					if ( (value as SVGElement).tagName !== 'path' || this instanceof BPMNEdge) {
 						(value as SVGElement).style.strokeWidth = config.strokeWidth;
 					}
+				} else if(clist.contains('change-icon')) {
+					(value as SVGImageElement).setAttributeNS('http://www.w3.org/1999/xlink', "xlink:href", config.indicatorIcon);
 				}
 			});
 		} else {
@@ -566,4 +600,5 @@ export interface ElementStyleConfig {
 	fill: string;
 	stroke: string;
 	strokeWidth: string;
+	indicatorIcon: string;
 }

@@ -1,3 +1,4 @@
+import { DiagramRect } from "./process-change-model";
 
 export class ColoredMarker {
 
@@ -192,6 +193,10 @@ export class InteractiveSVG {
 		this.svgContainer.appendChild(buttonGroup);
 	}
 
+	public destroy = (): void => {
+		this.svgContainer.removeChild(this.matrixGroup);
+	}
+
 	public applySVGMatrixTransformations(element: SVGElement | SVGPathElement, translateX, translateY, rotateAngle, scaleFactor): void {
 		let matrixRaw = element.getAttributeNS(null, "transform");
 		let matrix = matrixRaw?.replace("matrix(", "").replace(")", "").split(" ").map(str => parseFloat(str));
@@ -325,6 +330,17 @@ export class InteractiveSVG {
 		let newShape = document.createElementNS("http://www.w3.org/2000/svg", 'polygon');
 		newShape.setAttributeNS(null, "points", polyPath);
 		this.setStandardAttributes(newShape, id, draggable, dragHandleForParent , style, classNames);
+		return newShape;
+	}
+
+	public createImageObject = (id: string, draggable: boolean, dragHandleForParent: boolean, href: string, rect: DiagramRect, style: string, classNames: string): SVGImageElement => {
+		let newShape = document.createElementNS("http://www.w3.org/2000/svg", 'image');
+		newShape.setAttributeNS('http://www.w3.org/1999/xlink', "xlink:href", href);
+		newShape.setAttributeNS(null, "x", "" + rect.x);
+		newShape.setAttributeNS(null, "y", "" + rect.y);
+		newShape.setAttributeNS(null, "width", "" + rect.width);
+		newShape.setAttributeNS(null, "height", "" + rect.height);
+		this.setStandardAttributes(newShape, id, draggable, dragHandleForParent, style, classNames);
 		return newShape;
 	}
 

@@ -68,7 +68,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 			console.log('diagram objects in moddle', corrDiagramElements);
 
-			const pcm = new ProcessChangeModel('Deine Mutter', svgContainer, moddle);
+			const pcm = new ProcessChangeModel('AwesomeProcess', svgContainer, moddle);
 
 			let stuffTodoAfterElementsWereAdded: (() => Promise<void>)[] = [];
 
@@ -264,6 +264,9 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				console.warn("One of the two processes is not initialized yet! Or the svg container is not there.");
 			} else {
 
+				if (this.pcmFinal) {
+					this.pcmFinal.destroy();
+				}
 				this.pcmFinal = await this.initProcessChangeModelFromXML(this.pcmAfter.originalXml, containerProcessFinal);
 				
 				// Test check for changes.
@@ -280,7 +283,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		this.loading = true;
 
 		//download.
-		this.downloadStringAsFile(this.pcmFinal?.name + ".txt", this.pcmFinal?.exportToDOTLanguage() ?? '');
+		this.downloadStringAsFile(this.pcmFinal?.name + ".dot", this.pcmFinal?.exportToDOTLanguage() ?? '');
 
 		// TODO: for future: finally export our process again maybe with the moddle
 		const ourProcess = this.moddle.rootElement.get('diagrams')[0].plane.bpmnElement;
