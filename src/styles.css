@@ -57,9 +57,12 @@
 }
 
 #features {
-  padding: 10% 15%;
+  padding-top: 10%;
+  padding-left: 15%;
+  padding-right: 15%;
   position: relative;
   z-index: 1;
+  margin-bottom: 100px;
 }
 
 .feature-box {
@@ -70,6 +73,50 @@
   color: linear-gradient(#28b487, #7dd56f);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+.feature-text {
+  text-align: center;
+}
+
+#instructions {
+}
+.giant-number-left {
+  font-family: Holtwood One SC, serif;
+  font-size: 300px;
+}
+
+.inst-text-2 {
+  border-style: solid;
+  border-radius: 15px 50px 30px;
+  background-color: #fff;
+  padding: 5% 5%;
+  font-size: 20px;
+  border-color: #fff;
+  box-shadow: 0px 20px 30px 0px rgba(0, 0, 0, 0.3),
+    0px 4px 4px 0 rgba(0, 0, 0, 0.15);
+  text-align: center;
+  right: 50px;
+}
+
+.feature-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  margin: 40px;
+  gap: 50px;
+  padding-left: 15%;
+  padding-right: 15%;
+}
+
+.btn-custom {
+  background: linear-gradient(to top left, #28b487 0%, #7dd56f 100%);
+  border-radius: 15px !important;
+}
+.flex-item-t {
+}
+
+.flex-item-n {
 }
 
 #footer {
