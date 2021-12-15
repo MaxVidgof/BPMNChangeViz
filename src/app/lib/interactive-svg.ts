@@ -216,7 +216,7 @@ export class InteractiveSVG {
 		let centerY = parseFloat(viewBox[3]) / 2;domRenderedBox.height / 2;
 
 		let modifiedScale = this.currentScale * scale;
-		if (modifiedScale >= 2.0) {
+		if (modifiedScale >= 3.0) {
 			scale = 1.0;
 		} else if(modifiedScale <= 0.2) {
 			scale = 1.0;
@@ -235,12 +235,39 @@ export class InteractiveSVG {
 	}
 
 	public addSVGElement(element: SVGElement, recalculateSVGViewFit: boolean = false): void {
+		element.setAttributeNS(null, "svg-index", ""+this.matrixGroup.children.length);
 		this.matrixGroup.appendChild(element);
 
 		if (recalculateSVGViewFit) {
 			const rect = (this.matrixGroup as SVGGraphicsElement).getBBox();
 			this.svgContainer.setAttributeNS(null, "viewBox", (rect.x - 20) + " " + (rect.y - 20) + " " + (rect.width + 40) + " " + (rect.height + 40))
 		}
+	}
+
+	public switchOrderOfTwoElements(element1: SVGElement | null, element2: SVGElement | null): boolean {
+		console.log('switch!');
+		if (!element1 || !element2) {
+			return false;
+		}
+		
+		let ix1 = element1.getAttributeNS(null, "svg-index");
+		let ix2 = element2.getAttributeNS(null, "svg-index");
+		if (!ix1 || !ix2) {
+			return false;
+		}
+
+		let allElements = Array.from(this.matrixGroup.childNodes);
+		let elementThatComesAfter1 = allElements.find(ee => 
+			parseInt((ee as SVGElement).getAttributeNS(null, "svg-index") ?? '-1') === parseInt(ix1 ?? "-1")+1
+		);
+		console.log(element1, element2, elementThatComesAfter1);
+		
+		//this.matrixGroup.insertBefore(element2, element1);
+		//this.matrixGroup.insertBefore(element1, element2);
+		//element2.setAttributeNS(null, "svg-index", ix1);
+		//element1.setAttributeNS(null, "svg-index", ix2);
+
+		return true;
 	}
 	
 	public createSVGGroup(id: string, setIdentityTransform: boolean, ...elements: (SVGElement | SVGPathElement)[]): SVGElement {
@@ -361,62 +388,5 @@ export class InteractiveSVG {
 		if (style != null) {
 			element.setAttributeNS(null, "style", style);
 		}
-	}
-}
-
-
-export class SVGTransformMatrix {
-
-	a: number;
-	b: number;
-	c: number;
-	d: number;
-	e: number;
-	f: number;
-
-
-	constructor(...arr: number[]) {
-		this.a = arr[0];
-		this.b = arr[1];
-		this.c = arr[2];
-		this.d = arr[3];
-		this.e = arr[4];
-		this.d = arr[5];
-		this.f = arr[6];
-	}
-
-	public createFromTransformString(matrixRaw: string): SVGTransformMatrix {
-		let arr = matrixRaw.replace("matrix(", "").replace(")", "").split(" ");
-		this.a = parseFloat(arr[0]);
-		this.b = parseFloat(arr[1]);
-		this.c = parseFloat(arr[2]);
-		this.d = parseFloat(arr[3]);
-		this.e = parseFloat(arr[4]);
-		this.f = parseFloat(arr[5]);
-		return this;
-	}
-
-	public exportToTransformString(): string {
-		return "matrix(" + this.a + " " + this.b + " " + this.c + " " + this.d + " " + this.e + " " + this.f + ")";
-	}
-
-	public static Identity(): SVGTransformMatrix {
-		return new SVGTransformMatrix(1, 0, 0, 1, 0, 0);
-	}
-
-	public static Rotation(theta: number): SVGTransformMatrix {
-		return new SVGTransformMatrix(Math.cos(theta), Math.sin(theta), -Math.sin(theta), Math.cos(theta), 0, 0);
-	}
-
-	public static Translation(dx: number, dy: number): SVGTransformMatrix {
-		return new SVGTransformMatrix(1, 0, 0, 1, dx, dy);
-	}
-
-	public static Scaling(scale: number): SVGTransformMatrix {
-		return new SVGTransformMatrix(scale, scale, scale, scale, 0, 0);
-	}
-
-	public toString(): string {
-		return this.exportToTransformString();
 	}
 }

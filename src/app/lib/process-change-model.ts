@@ -10,6 +10,9 @@ import { ColoredMarker, InteractiveSVG, SVGUIButton } from "./interactive-svg";
 
 import {findBestMatch, compareTwoStrings} from "string-similarity"
 
+import { HashList } from 'hashlist-typescript';
+import * as cloneDeep from 'lodash.clonedeep';
+
 
 // about the process plus change. So that we can later easily visualize it and export it.
 export class ProcessChangeModel {
@@ -20,10 +23,11 @@ export class ProcessChangeModel {
 
 	name: string;
 	originalXml: string = '';
+	moddleObj: any;
 
 	private elements: BPMNElement[] = [];
 	private interactiveSVG: InteractiveSVG;
-	private moddleObj: any;
+	private changeTrackingEdges: {old: BPMNNode | null, new: BPMNNode | null}[] = [];
 
 	constructor(name: string, svgContainer: HTMLElement, moddleObj: any) {
 		this.name = name;
@@ -258,28 +262,254 @@ export class ProcessChangeModel {
 
 	public takeOverAndNoteChangesFromEarlierProcessChangeModel = (otherPcm: ProcessChangeModel): void => {
 		
-		
+
+		//this array keeps track of which node becomes which between the two versions.
+		// null means points to nowhere or comes from nowhere (removed / added)
+		//the array NOT having a node represents that it has no idea about it yet.
+		this.changeTrackingEdges = [];
+
+		//1. identify nodes by description.
+		//2. identify leftover nodes by id.
+		//3. identify edges between nodes that are new or old.
+
+
 		console.log("############### We are going to find some changes, yahoo.");
+
+		// STEP 1 - match nodes by descriptions.
+		let txtsNew = this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.description);
+		let txtsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.description);
+		for (const neww of this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
+			let matches = findBestMatch(neww.description, txtsOld);
+			let oldd: BPMNNode | null = null;
+			if (matches.bestMatch.rating >= 0.91) {
+				oldd = otherPcm.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
+			}
+
+			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
+				this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
+				if (neww.description.indexOf('Notify Team') >= 0) {
+					console.log('################### a tret mich doch die Gans!', oldd, neww);
+				}
+			}
+		}
 		
+		txtsNew = this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.description);
+		txtsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.description);
+		for (const oldd of otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
+			let matches = findBestMatch(oldd.description, txtsNew);
+			let neww: BPMNNode | null = null;
+			if (matches.bestMatch.rating >= 0.91) {
+				neww = this.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
+			}
+
+			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
+				this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
+			}
+		}
+
+		//STEP 2 - match leftover nodes by id
+		let idsNew = this.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.id);
+		let idsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.id);
+		for (const neww of this.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.new === e))) {
+
+			let oldd: BPMNNode | null = null;
+			if (idsOld.indexOf(neww.id) >= 0) {
+				oldd = otherPcm.elements.find(e => e.id === neww.id) as BPMNNode ?? null;
+			} else {
+				console.log("found no element in other with same id as in me.", neww.description);
+			}
+
+			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
+				this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
+			}
+		}
+		idsNew = this.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.id);
+		idsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.id);
+		for (const oldd of otherPcm.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.old === e))) {
+
+			let neww: BPMNNode | null = null;
+			console.log(idsNew.indexOf(oldd.id))
+			if (idsNew.indexOf(oldd.id) >= 0) {
+				neww = this.elements.find(e => e.id === oldd.id) as BPMNNode ?? null;
+			} else {
+				console.log("found no element in me with same id as in other.", oldd.description);
+			}
+
+			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
+				this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
+			}
+		}
+
+
+		console.log(this.changeTrackingEdges, this.changeTrackingEdges.find(ed => ed.old?.id === 'Gateway_0fldw6x'));
+
+		console.log("4 - so far its", this.changeTrackingEdges.length);
+
+		for (const edge of this.changeTrackingEdges) {
+			if (edge.new === null && edge.old !== null) {
+				let cpy = cloneDeep(edge.old) as BPMNNode;
+				cpy.id = cpy.id + "__ZZZ";
+				this.addElement(cpy);
+				cpy.setChange(ElementChangeType.Removed);
+				edge.new = cpy;
+			} else if (edge.old === null && edge.new !== null) {
+				edge.new?.setChange(ElementChangeType.Added);
+
+				for (const outp of edge.new.outputs) {
+					if (outp.getChangeType() === ElementChangeType.NONE) {
+						outp.setChange(ElementChangeType.Added);
+					}
+				}
+				for (const inp of edge.new.inputs) {
+					console.log('HEEEEIL HITTLERR!', inp.input, edge.new, this.elements.filter(el => el.id === edge.new?.id));
+					if (inp.getChangeType() === ElementChangeType.NONE) {
+						inp.setChange(ElementChangeType.Added);
+					}
+				}
+			} else {
+				//we have proper matching.
+			}
+		}
+
+
+
+		// now finally find out edges between nodes in our new process that were added or removed.   
+		console.log(this.changeTrackingEdges,  this.changeTrackingEdges.filter(ed => ed.new?.getChangeType() === ElementChangeType.Removed))                                             
+		for (const edge of this.changeTrackingEdges.filter(ed => ed.new?.getChangeType() === ElementChangeType.Removed)) {
+			console.log(edge);
+			for (const outp of edge.old?.outputs ?? []) {
+				let changeTrack = this.changeTrackingEdges.find(e => e.old === outp.output && e.new !== null);
+				let inpNew = this.elements.find(e => changeTrack && e instanceof BPMNEdge && e.output === changeTrack?.new && e.input === edge.new);
+				if (!inpNew) {
+					inpNew = cloneDeep(outp) as BPMNEdge;
+					inpNew.id = inpNew.id + "__ZZZ";
+					(inpNew as BPMNEdge).input = edge.new;
+					(inpNew as BPMNEdge).output = changeTrack?.new ?? null;
+					this.addElement(inpNew);
+					console.log('added remove edge 1.', inpNew);
+				}
+				if (inpNew.getChangeType() === ElementChangeType.NONE) {
+					inpNew.setChange(ElementChangeType.Removed);
+					console.log(' marked remove edge 1', inpNew);
+				}
+			}
+			for (const inp of edge.old?.inputs ?? []) {
+				let changeTrack = this.changeTrackingEdges.find(e => e.old === inp.input && e.new !== null);
+				let inpNew = this.elements.find(e => changeTrack && e instanceof BPMNEdge && e.input === changeTrack?.new && e.output === edge.new);
+				if (!inpNew) {
+					inpNew = cloneDeep(inp) as BPMNEdge;
+					inpNew.id = inpNew.id + "__ZZZ";
+					(inpNew as BPMNEdge).output = edge.new;
+					(inpNew as BPMNEdge).input = changeTrack?.new ?? null;
+					this.addElement(inpNew);
+					console.log('added remove edge 2.', inpNew);
+				}
+				if (inpNew.getChangeType() === ElementChangeType.NONE) {
+					inpNew.setChange(ElementChangeType.Removed);
+					console.log(' marked remove edge 2', inpNew);
+				}
+			}
+		}
+		
+
+
+		for (const node1 of this.elements.filter(e => e instanceof BPMNNode)) {
+			for (const node2 of [...(node1 as BPMNNode).inputs.map(i => i.input), ...(node1 as BPMNNode).outputs.map(i => i.output)]) {
+				let track1 = this.changeTrackingEdges.find(ed => ed.new === node1)?.old;
+				let track2 = this.changeTrackingEdges.find(ed => ed.new === node2)?.old;
+				if (track1 && track2) {
+					if (!track1.outputs.find(o => o.output === track2) && !track2.outputs.find(o => o.output === track1)) {
+						console.log('+++ +++ found a pair that is connected in V2, but not V1.', node1.description, node2?.description);
+						//TODO?
+					}
+				}
+			}
+		}
+		for (const node1 of otherPcm.elements.filter(e => e instanceof BPMNNode)) {
+			for (const node2 of [...(node1 as BPMNNode).inputs.map(i => i.input), ...(node1 as BPMNNode).outputs.map(i => i.output)]) {
+				let track1 = this.changeTrackingEdges.find(ed => ed.old === node1)?.new;
+				let track2 = this.changeTrackingEdges.find(ed => ed.old === node2)?.new;
+				if (track1 && track2) {
+					if (!track1.outputs.find(o => o.output === track2) && !track2.outputs.find(o => o.output === track1)) {
+						console.log('+++ +++ found a pair that is connected in V1, but not V2.', node1.description, node2?.description);
+						let edge = track1.outputs.find(o => o.output === track2) ? track1.outputs.find(o => o.output === track2) : track2.outputs.find(o => o.output === track1);
+						if (edge?.getChangeType() !== ElementChangeType.Removed) {
+							edge?.setChange(ElementChangeType.Removed);
+						}
+					}
+				}
+			}
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 		// METHOD 1 -- Find differences in ids.
 		// check elements that we habve but not the other (added)
 		// and check elements that the other has but not us (removed)
-		for (const el of this.elements) {
-			let elementInOtherWithSameId = otherPcm.elements.find(e => e.id === el.id);
-			if (!elementInOtherWithSameId) {
-				console.log('# found an id that is not existent in the other pcm.');
-				el.setChange(ElementChangeType.Added);
-			}
-		}
+		/*
 		for (const el of otherPcm.elements) {
 			let elementInMeWithSameId = this.elements.find(e => e.id === el.id);
 			if (!elementInMeWithSameId) {
 				console.log('# found an id that is not existent in me, but the other pcm.');
-				this.addElement(el);
-				el.setChange(ElementChangeType.Removed);
+				if (!this.elements.find(e => e.id === el.id)) {
+					let cpy = cloneDeep(el);
+					this.addElement(cpy);
+				}
+				idsMarkedRemoving.append(el.id);
 			}
 		}
+		for (const el of this.elements) {
+			let elementInOtherWithSameId = otherPcm.elements.find(e => e.id === el.id);
+			if (!elementInOtherWithSameId) {
+				console.log('# found an id that is not existent in the other pcm.');
+				idsMarkedAdding.append(el.id);
+			}
+		}
+		*/
 
 
 
@@ -289,13 +519,15 @@ export class ProcessChangeModel {
 
 		// METHOD 3 -- Find differences in descriptions
 		// if there is an activity doing X, do we find an activity doing X in the second process?
+		/*
 		for (const el of this.elements.filter(el => el instanceof BPMNNode && el.description.length > 0)) {
 			let txt = el.description;
 			let otherTxts = otherPcm.elements.filter(el => el.description.length > 0).map(e => e.description);
 			let matches = findBestMatch(txt, otherTxts);
 			if (matches.bestMatch.rating < 0.91) {
 				console.log("found no element in other with same name as in me.", el.description);
-				el.setChange(ElementChangeType.Added);
+				console.log('markedAdding', el.id);
+				idsMarkedAdding.append(el.id);
 			}
 		}
 		for (const el of otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
@@ -304,21 +536,71 @@ export class ProcessChangeModel {
 			let matches = findBestMatch(txt, otherTxts);
 			if (matches.bestMatch.rating < 0.91) {
 				console.log("found no element in me with same name as in other.", el.description);
-				this.addElement(el);
+				
 				const elementsThatCouldBeRightThere = this.elements.filter(ele => ele instanceof BPMNNode &&
 					this.getRectangleIntersectionArea(ele.diagramShape, (el as BPMNNode).diagramShape) > 0.7)
-				console.log("###", elementsThatCouldBeRightThere.length)
+				console.log("###", elementsThatCouldBeRightThere)
+
+				// clone the node that perceivingly got removed and add it.
+				//also add its inputs and outputs, marked as removed. But remember to set their references!
+				let newNode = cloneDeep(el) as BPMNNode;
+				newNode.id = newNode.id + "_ZZ";	// basically it can be the same node that got removed and added, in other words: only text changed.
+				this.addElement(newNode);
+				idsMarkedRemoving.append(newNode.id);
+					/*
+				for (const inp of (el as BPMNNode).inputs) {
+					let newEdge = cloneDeep(inp);
+					//(newEdge as BPMNEdge).input = (this.elements.find(ee => ee.id === newEdge.id) as BPMNEdge).input;
+					if (!this.elements.find(e => e.id === newEdge.id)) {
+						this.addElement(newEdge);
+					}
+					idsMarkedRemoving.append(newEdge);
+				}
+				for (const outp of (el as BPMNNode).outputs) {
+					let newEdge = cloneDeep(outp);
+					(newEdge as BPMNEdge).output = (this.elements.find(ee => ee.id === newEdge.id) as BPMNEdge).output;
+					if (!this.elements.find(e => e.id === newEdge.id)) {
+						this.addElement(newEdge);
+					}
+					idsMarkedRemoving.append(newEdge);
+				}
+				
 
 				//TODO
 				// check if some tasks/activities overlap heavily. Could be the case they just got replaced.
+				
 				if (elementsThatCouldBeRightThere.length > 0) {
+					let elementWithSmallestIndex = elementsThatCouldBeRightThere[0];
+					for (const ell of elementsThatCouldBeRightThere) {
+						let svgIndex = parseInt(ell.svg?.getAttributeNS(null, "svg-index") ?? "-1");
+						let smallesSvgIndex =  parseInt(elementWithSmallestIndex.svg?.getAttributeNS(null, "svg-index") ?? "-1");
+						console.log('iterating through', ell, svgIndex)
+						if (svgIndex < smallesSvgIndex) {
+							this.interactiveSVG.switchOrderOfTwoElements(elementWithSmallestIndex.svg, ell.svg);
+						}
+					}
+				} else {
 
+					//this.interactiveSVG.svgContainer.insertBefore(el.svg, );
 				}
 
 				// so far we just translate the removed element so we see whats going on.
 				elementsThatCouldBeRightThere.forEach(ll => this.interactiveSVG.applySVGMatrixTransformations(el.svg ?? new SVGElement(), 15, 15, 0, 1));
+			
 				
-				el.setChange(ElementChangeType.Removed);
+			}
+		}
+
+		// next step: look between which nodes the edges are and where not.
+		for (const el of this.elements.filter(el => el instanceof BPMNEdge)) {
+			
+
+			let otherTxts = otherPcm.elements.filter(el => el.description.length > 0).map(e => e.description);
+			let matches = findBestMatch(txt, otherTxts);
+			if (matches.bestMatch.rating < 0.91) {
+				console.log("found no element in other with same name as in me.", el.description);
+				console.log('markedAdding', el.id);
+				idsMarkedAdding.append(el.id);
 			}
 		}
 
@@ -326,6 +608,16 @@ export class ProcessChangeModel {
 		// More of a subproblem. Find multiple activities that accomplish smth together.
 		// TODO
 		// if there is a loop involving some activities, do we find a loop involving such in the second process?
+
+
+
+		for (const id of idsMarkedAdding) {
+			this.elements.find(e => e.id === id)?.setChange(ElementChangeType.Added);
+		} 
+		for (const id of idsMarkedRemoving) {
+			this.elements.find(e => e.id === id)?.setChange(ElementChangeType.Removed);
+		} 
+		*/
 
 
 		console.log("############### We hopefully found some changes, yahoooo.");
@@ -351,7 +643,7 @@ export class ProcessChangeModel {
 		for (const el of this.elements.filter(e => e instanceof BPMNNode)) {
 			let shape = 'rect';
 			if ((el as BPMNNode).type === BPMNNodeType.StartEvent || (el as BPMNNode).type === BPMNNodeType.EndEvent) {
-				shape = 'point';
+				shape = 'circle';
 			} else if ((el as BPMNNode).type === BPMNNodeType.GatewayOR || (el as BPMNNode).type === BPMNNodeType.ComplexGateway ||
 			(el as BPMNNode).type === BPMNNodeType.EventBasedGateway || (el as BPMNNode).type === BPMNNodeType.GatewayAND) {
 				shape = 'diamond';
@@ -511,11 +803,11 @@ export abstract class BPMNElement {
 		if (this.svg) {
 			if (this.changeType === ElementChangeType.Added) {
 				config.fill = 'rgba(30, 217, 45, 0.7)';
-				config.stroke = 'rgba(13, 115, 21, 0.7)';
+				config.stroke = 'rgba(13, 115, 21, 1.0)';
 				config.strokeWidth = "9px";
 			} else if (this.changeType === ElementChangeType.Removed) {
 				config.fill = 'rgba(227, 39, 39, 0.7)';
-				config.stroke = 'rgba(112, 2, 2, 0.7)';
+				config.stroke = 'rgba(112, 2, 2, 1.0)';
 				config.strokeWidth = "9px";
 			}
 

@@ -66,8 +66,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 			const corrDiagramElements = moddle.rootElement.get('diagrams')[0].plane.planeElement;
 
-			console.log('diagram objects in moddle', corrDiagramElements);
-
 			const pcm = new ProcessChangeModel('AwesomeProcess', svgContainer, moddle);
 
 			let stuffTodoAfterElementsWereAdded: (() => Promise<void>)[] = [];
@@ -99,10 +97,11 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 						nodeType = mappedTypes[0].type;
 					}
 				}
-
+				
 				if (el.$type === 'bpmn:SequenceFlow' || el.$type === 'bpmn:MessageFlow') {
 					const typ = el.$type === 'bpmn:SequenceFlow' ? BPMNEdgeType.SequenceFlow : BPMNEdgeType.MessageFlow;
 					toAdd = new BPMNEdge(el.id, typ);
+
 
 					//waypoints are absolute in bpmn-js
 					(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
@@ -127,6 +126,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 					(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 					(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 
+					console.log(el, corrDiaElement);
 					let idsInput = (el.incoming ?? []).map(el => el.id);
 					let idsOutput = (el.outgoing ?? []).map(el => el.id);
 					let pr = (): Promise<void> => { return new Promise((resolve, reject) => {
@@ -286,7 +286,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		this.downloadStringAsFile(this.pcmFinal?.name + ".dot", this.pcmFinal?.exportToDOTLanguage() ?? '');
 
 		// TODO: for future: finally export our process again maybe with the moddle
-		const ourProcess = this.moddle.rootElement.get('diagrams')[0].plane.bpmnElement;
+		const ourProcess = this.pcmFinal?.moddleObj.rootElement.get('diagrams')[0].plane.bpmnElement;
 		ourProcess.set('lastChangeISO', new Date().toISOString());
 		const exported = await this.moddle.toXML(this.moddle.rootElement);
 		console.log('Exporting our extended MetaModel to XML with moddle:', exported);
