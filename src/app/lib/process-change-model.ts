@@ -278,32 +278,32 @@ export class ProcessChangeModel {
 		// STEP 1 - match nodes by descriptions.
 		let txtsNew = this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.description);
 		let txtsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.description);
-		for (const neww of this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
-			let matches = findBestMatch(neww.description, txtsOld);
-			let oldd: BPMNNode | null = null;
-			if (matches.bestMatch.rating >= 0.91) {
-				oldd = otherPcm.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
-			}
+		if (txtsOld.length > 0) {
+			for (const neww of this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
+				let matches = findBestMatch(neww.description, txtsOld);
+				let oldd: BPMNNode | null = null;
+				if (matches.bestMatch.rating >= 0.91) {
+					oldd = otherPcm.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
+				}
 
-			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
-				this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
-				if (neww.description.indexOf('Notify Team') >= 0) {
-					console.log('################### a tret mich doch die Gans!', oldd, neww);
+				if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
+					this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
 				}
 			}
 		}
-		
 		txtsNew = this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.description);
 		txtsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.description);
-		for (const oldd of otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
-			let matches = findBestMatch(oldd.description, txtsNew);
-			let neww: BPMNNode | null = null;
-			if (matches.bestMatch.rating >= 0.91) {
-				neww = this.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
-			}
+		if (txtsNew.length > 0) {
+			for (const oldd of otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0)) {
+				let matches = findBestMatch(oldd.description, txtsNew);
+				let neww: BPMNNode | null = null;
+				if (matches.bestMatch.rating >= 0.91) {
+					neww = this.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
+				}
 
-			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
-				this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
+				if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
+					this.changeTrackingEdges.push({old: oldd as BPMNNode, new: neww as BPMNNode});
+				}
 			}
 		}
 
@@ -328,7 +328,6 @@ export class ProcessChangeModel {
 		for (const oldd of otherPcm.elements.filter(e => e instanceof BPMNNode && !this.changeTrackingEdges.find(ed => ed.old === e))) {
 
 			let neww: BPMNNode | null = null;
-			console.log(idsNew.indexOf(oldd.id))
 			if (idsNew.indexOf(oldd.id) >= 0) {
 				neww = this.elements.find(e => e.id === oldd.id) as BPMNNode ?? null;
 			} else {
@@ -343,9 +342,10 @@ export class ProcessChangeModel {
 
 		console.log(this.changeTrackingEdges, this.changeTrackingEdges.find(ed => ed.old?.id === 'Gateway_0fldw6x'));
 
-		console.log("4 - so far its", this.changeTrackingEdges.length);
-
 		for (const edge of this.changeTrackingEdges) {
+
+			console.log(edge.new?.description, edge.new);
+
 			if (edge.new === null && edge.old !== null) {
 				let cpy = cloneDeep(edge.old) as BPMNNode;
 				cpy.id = cpy.id + "__ZZZ";
@@ -355,24 +355,94 @@ export class ProcessChangeModel {
 			} else if (edge.old === null && edge.new !== null) {
 				edge.new?.setChange(ElementChangeType.Added);
 
+				/*
 				for (const outp of edge.new.outputs) {
 					if (outp.getChangeType() === ElementChangeType.NONE) {
 						outp.setChange(ElementChangeType.Added);
 					}
 				}
 				for (const inp of edge.new.inputs) {
-					console.log('HEEEEIL HITTLERR!', inp.input, edge.new, this.elements.filter(el => el.id === edge.new?.id));
 					if (inp.getChangeType() === ElementChangeType.NONE) {
 						inp.setChange(ElementChangeType.Added);
 					}
 				}
+				*/
 			} else {
 				//we have proper matching.
 			}
 		}
 
+		console.log(this.changeTrackingEdges)
 
 
+		for (const n of this.elements.filter(e => e instanceof BPMNNode)) {
+			if (n.getChangeType() === ElementChangeType.Added) {
+				for (const link of [...(n as BPMNNode).inputs, ...(n as BPMNNode).outputs]) {
+					link.setChange(ElementChangeType.Added);
+				}
+			} else if (n.getChangeType() === ElementChangeType.Removed) {
+				for (const inp of (n as BPMNNode).inputs) {
+
+					if (!this.elements.find(e => e === inp)) {
+						let cpyEdge = cloneDeep(inp) as BPMNEdge;
+						cpyEdge.id = cpyEdge.id + "__ZZZ";
+						(n as BPMNNode).inputs.splice((n as BPMNNode).inputs.indexOf(inp), 1);
+						(n as BPMNNode).inputs.push(cpyEdge);
+						cpyEdge.output = n as BPMNNode;
+
+						let track = this.changeTrackingEdges.find(e => e.old === inp.input);
+						if (track) {
+							cpyEdge.input = track.new;
+							console.warn('this shouldnt happen.');
+						}
+						
+						this.addElement(cpyEdge);
+						cpyEdge.setChange(ElementChangeType.Removed);
+					}
+				}
+				for (const outp of (n as BPMNNode).outputs) {
+
+					if (!this.elements.find(e => e === outp)) {
+						let cpyEdge = cloneDeep(outp) as BPMNEdge;
+						cpyEdge.id = cpyEdge.id + "__ZZZ";
+						(n as BPMNNode).outputs.splice((n as BPMNNode).outputs.indexOf(outp), 1);
+						(n as BPMNNode).outputs.push(cpyEdge);
+						cpyEdge.input = n as BPMNNode;
+
+						let track = this.changeTrackingEdges.find(e => e.old === outp.output);
+						if (track) {
+							cpyEdge.input = track.new;
+							console.warn('this shouldnt happen.');
+						}
+						
+						this.addElement(cpyEdge);
+						cpyEdge.setChange(ElementChangeType.Removed);
+					}
+				}
+			} else {
+				let currentTrack = this.changeTrackingEdges.find(e => e.new === n);
+				for (const inp of currentTrack?.old?.inputs ?? []) {
+
+					let changeTrack = this.changeTrackingEdges.find(e => e.old === inp.input);
+					let inpNew = currentTrack?.new?.inputs.find(i => i.input === changeTrack?.new);
+					if (!inpNew) {
+						let cpyEdge = cloneDeep(inp) as BPMNEdge;
+						cpyEdge.id = cpyEdge.id + "__ZZZ";
+						(n as BPMNNode).inputs.push(cpyEdge);
+						(changeTrack?.new as BPMNNode).outputs.push(cpyEdge);
+						cpyEdge.output = n as BPMNNode;
+						cpyEdge.input = changeTrack?.new ?? null;
+
+						this.addElement(cpyEdge);
+						cpyEdge.setChange(ElementChangeType.Removed);
+					}
+				}
+			}
+		}
+
+
+
+		/*	
 		// now finally find out edges between nodes in our new process that were added or removed.   
 		console.log(this.changeTrackingEdges,  this.changeTrackingEdges.filter(ed => ed.new?.getChangeType() === ElementChangeType.Removed))                                             
 		for (const edge of this.changeTrackingEdges.filter(ed => ed.new?.getChangeType() === ElementChangeType.Removed)) {
@@ -440,6 +510,7 @@ export class ProcessChangeModel {
 				}
 			}
 		}
+		*/
 
 
 
