@@ -1,15 +1,11 @@
-/* You can add global styles to this file, and also import other style files */
-
+/* change vis component */
 .networkContainer {
-  margin: 1em 1em 10em 1em;
+  margin: 1em 1em 8em 1em;
   border: 1px solid lightgray;
 }
 
-.highlight-overlay {
-  background-color: green; /* color elements as green */
-  opacity: 0.4;
-  pointer-events: none; /* no pointer events, allows clicking through onto the element */
-}
+
+
 
 /* Styles for the Main page */
 

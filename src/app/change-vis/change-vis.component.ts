@@ -15,6 +15,7 @@ import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 import ctExtension from '../lib/meta-model-extension.json';
 import { BPMNEdge, BPMNEdgeType, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ElementChangeType, ProcessChangeModel } from '../lib/process-change-model';
 import { take } from 'rxjs';
+import { readyException } from 'jquery';
 
 @Component({
 	selector: 'app-change-vis',
@@ -126,7 +127,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 					(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 					(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 
-					console.log(el, corrDiaElement);
 					let idsInput = (el.incoming ?? []).map(el => el.id);
 					let idsOutput = (el.outgoing ?? []).map(el => el.id);
 					let pr = (): Promise<void> => { return new Promise((resolve, reject) => {
@@ -166,44 +166,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		document.body.removeChild(element);
 	}
 
-	public async testBpmnViewer(xml: string): Promise<void> {
-	
-		let modeler = new BpmnModeler({
-			container: '#myBpmnNetwork',
-			additionalModules: [
-			]
-		});
-
-		modeler.importXML(xml, (err) => {
-
-			if (err) {
-				console.log('error rendering', err);
-			} else {
-				console.log('rendered');
-			}
-
-
-			//remove the annoying link bottom right in BpmnViewer.
-			let linkElements = document.getElementsByClassName('bjs-powered-by');
-			let overlayElements = document.getElementsByClassName('djs-overlays');
-			let paletteElements = document.getElementsByClassName('djs-palette');
-			Array.from(linkElements).forEach(el => {
-				el.remove();
-			});
-
-				
-			const elementRegistry = modeler.get('elementRegistry');
-			const elementFactory = modeler.get('elementFactory');
-			const modeling = modeler.get('modeling');
-			const popupMenu = modeler.get('popupMenu');
-			const contextPadProvider = modeler.get('contextPadProvider');
-			const overlays = modeler.get('overlays');	// should also be available in viewer
-
-			const elements = elementRegistry.getAll();
-		});
-
-	}
-
 	async doSimpleGETRequest<T>(url: string): Promise<T> {
 		return new Promise((resolve, reject) => {
 			this.http.get(url,  
@@ -224,14 +186,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 	async ngOnInit(): Promise<void> {
 
-		// read local bpmn file
-		//let myTestXml = await this.doSimpleGETRequest('/assets/event-planning-process.bpmn');
-		//let myTestXml2 = await this.doSimpleGETRequest('/assets/event-planning-process-changed.bpmn');
-
-		// bpmn-js, TODO: remove
-		//await this.testBpmnViewer(myTestXml2);
-
-
 		// search file input elements
 		let fileEl1 = document.getElementById('processBeforeFile');
 		let fileEl2 = document.getElementById('processAfterFile');
@@ -246,10 +200,37 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			throw new Error("was soll des. One of the two process svg ids is not existent.");
 		}
 		this.addFileInputEventListener(fileEl1, async (str) => {
+
+			if (!fileEl1) {
+				throw new Error('Container is not ready.');
+			}
+
+			if (this.pcmBefore) {
+				this.pcmBefore.destroy();
+			}
 			this.pcmBefore = await this.initProcessChangeModelFromXML(str, containerProcessBefore);
+
+			if (!this.pcmBefore) {
+				fileEl1.className = fileEl1?.className.replace(/is\-(in)*valid/, "is-invalid");
+			} else {
+				fileEl1.className = fileEl1.className.replace(/is\-(in)*valid/, "is-valid");
+			}
 		});
 		this.addFileInputEventListener(fileEl2, async (str) => {
+			
+			if (!fileEl2) {
+				throw new Error('Container is not ready.');
+			}
+
+			if (this.pcmAfter) {
+				this.pcmAfter.destroy();
+			}
 			this.pcmAfter = await this.initProcessChangeModelFromXML(str, containerProcessAfter);
+			if (!this.pcmBefore) {
+				fileEl2.className = fileEl2?.className.replace(/is\-(in)*valid/, "is-invalid");
+			} else {
+				fileEl2.className = fileEl2?.className.replace(/is\-(in)*valid/, "is-valid");
+			}
 		});
 	}
 
@@ -274,6 +255,10 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			}
 			
 			this.loading = false;
+			let lowerSec = document.getElementById('change-vis-lower-section');
+			if (lowerSec) {
+				lowerSec.style['display'] = "";
+			}
 			resolve();
 		});
 	}
