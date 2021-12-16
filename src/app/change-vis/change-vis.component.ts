@@ -264,17 +264,17 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 	}
 
 	public async export(): Promise<void> {
-		
-		this.loading = true;
 
 		//download.
 		this.downloadStringAsFile(this.pcmFinal?.name + ".dot", this.pcmFinal?.exportToDOTLanguage() ?? '');
 
 		// TODO: for future: finally export our process again maybe with the moddle
+		/*
 		const ourProcess = this.pcmFinal?.moddleObj.rootElement.get('diagrams')[0].plane.bpmnElement;
 		ourProcess.set('lastChangeISO', new Date().toISOString());
 		const exported = await this.moddle.toXML(this.moddle.rootElement);
 		console.log('Exporting our extended MetaModel to XML with moddle:', exported);
+		*/
 	}
 
 	private addFileInputEventListener(el: HTMLElement, callback: (fileContent: string) => void) {

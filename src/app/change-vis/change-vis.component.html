@@ -1,3 +1,13 @@
+<section id="title">
+	<div class="container-fluid title-container">
+	  <div class="row">
+		<div class="col-lg-6 col-md-12 col-sm-12">
+		</div>
+	  </div>
+	</div>
+</section>
+
+
 <div class="container">
 	<h1 style="padding: 2em 0em 2em 0em">Process Change Visualizer</h1>
 
@@ -50,7 +60,12 @@
 			<svg xmlns="http://www.w3.org/2000/svg" class="networkContainer" id="mySVGFinal" width="60em" height="40em"></svg>
 		</div>
 
-		<button type="button" style="margin-bottom: 3em" (click)="export()" class="btn btn-outline-success">Export to DOT</button>
+		<!-- <button type="button" style="margin-bottom: 3em" (click)="export()" class="btn btn-outline-success">Export to DOT</button> -->
+		<div class="feature-container">
+			<button type="button" (click)="export()" class="btn btn-primary btn-lg btn-custom" style="margin-bottom: 3em">
+				Export to DOT
+			</button>
+		</div>
 	</div>
 
 </div>
