@@ -223,6 +223,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			}
 			this.pcmBefore = await this.initProcessChangeModelFromXML(str, containerProcessBefore);
 
+			console.log('pcm before is', this.pcmBefore);
 			if (!this.pcmBefore) {
 				fileEl1.className = fileEl1?.className.replace(/is\-(in)*valid/, "is-invalid");
 			} else {
@@ -239,7 +240,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				this.pcmAfter.destroy();
 			}
 			this.pcmAfter = await this.initProcessChangeModelFromXML(str, containerProcessAfter);
-			if (!this.pcmBefore) {
+			if (!this.pcmAfter) {
 				fileEl2.className = fileEl2?.className.replace(/is\-(in)*valid/, "is-invalid");
 			} else {
 				fileEl2.className = fileEl2?.className.replace(/is\-(in)*valid/, "is-valid");

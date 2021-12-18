@@ -310,8 +310,6 @@ export class ProcessChangeModel {
 		//3. identify edges between nodes that are new or old.
 
 
-		console.log("############### We are going to find some changes, yahoo.");
-
 		// STEP 1 - match nodes by descriptions.
 		let txtsNew = this.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.new === e)).map(e => e.description);
 		let txtsOld = otherPcm.elements.filter(e => e instanceof BPMNNode && e.description.length > 0 && !this.changeTrackingEdges.find(ed => ed.old === e)).map(e => e.description);
@@ -482,13 +480,6 @@ export class ProcessChangeModel {
 				}
 			}
 		}
-
-
-
-
-
-
-		console.log("############### We hopefully found some changes, yahoooo.");
 	}
 
 	private getRectangleIntersectionArea(a: {x: number, y: number, width: number, height: number},
@@ -555,6 +546,9 @@ export enum ElementChangeType {
 	"DecreasedTraffic"
 }
 
+/**
+ * This mapping matches change types to their icons. Useful for showing a legend on the website.
+ */
 export const ElementChangeIconsMapping: Map<ElementChangeType, string> = new Map([
 	[ElementChangeType.NONE, ""],
 	[ElementChangeType.Added, "/assets/symbols/added512.png"],
