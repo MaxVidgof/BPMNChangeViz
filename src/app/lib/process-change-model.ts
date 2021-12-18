@@ -13,22 +13,51 @@ import {findBestMatch, compareTwoStrings} from "string-similarity"
 import { HashList } from 'hashlist-typescript';
 import * as cloneDeep from 'lodash.clonedeep';
 
-
-// about the process plus change. So that we can later easily visualize it and export it.
+/**
+ * This data model holds information about a process.
+ * As well as all the change information about the elements.
+ */
 export class ProcessChangeModel {
 
 
-	// we model our own process elements, the reference to the moddle and the reference to the SVG.
-	// thats all we need.
-
+	/**
+	 * The name of the process change model.
+	 */
 	name: string;
+
+	/**
+	 * The original xml string from which it was created.
+	 */
 	originalXml: string = '';
+
+	/**
+	 * A reference to the bpmn-moddle object.
+	 */
 	moddleObj: any;
 
+	/**
+	 * An array of all bpmn elements.
+	 */
 	private elements: BPMNElement[] = [];
+
+	/**
+	 * A reference to the interactive SVG in the DOM where the process change model gets rendered.
+	 */
 	private interactiveSVG: InteractiveSVG;
+
+	/**
+	 * Basically the 'delta' between two processes.
+	 * An array of edges pointing from the old bpmn node to the new bpmn node, if existent.
+	 * If the old or new node does not exist (elements were added/removed), it is null in the changeTrackingEdge.
+	 */
 	private changeTrackingEdges: {old: BPMNNode | null, new: BPMNNode | null}[] = [];
 
+	/**
+	 * Initializes a process change model.
+	 * @param name the name of the model.
+	 * @param svgContainer a reference to the svg container where the model gets rendered.
+	 * @param moddleObj a reference to the moddle object to parse the process from.
+	 */
 	constructor(name: string, svgContainer: HTMLElement, moddleObj: any) {
 		this.name = name;
 		this.interactiveSVG = new InteractiveSVG(svgContainer, [
@@ -60,6 +89,9 @@ export class ProcessChangeModel {
 		this.moddleObj = null;
 	}
 
+	/**
+	 * Adds a bpmn element to the model.
+	 */
 	public addElement = (element: BPMNElement): void => {
 		this.elements.push(element);
 
@@ -260,6 +292,11 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;					
 	}
 
+	/**
+	 * One of the most important methods.
+	 * looks at differences between an older/earlier model and itself. And sets the change in its own elements.
+	 * @param otherPcm the "other" process change model to note changes on. This parameter should be an earlier/previous process.
+	 */
 	public takeOverAndNoteChangesFromEarlierProcessChangeModel = (otherPcm: ProcessChangeModel): void => {
 		
 
@@ -464,6 +501,10 @@ export class ProcessChangeModel {
 		return percentageOverlap;
 	}
 
+	/**
+	 * Since the overall data model is a graph, it can be re-utilized very easily for more graph-like processes.
+	 * @returns the graph in DOT language. Since auto-layouting may be needed in some cases.
+	 */
 	public exportToDOTLanguage(): string {
 		let lfcr = "\r\n";
 		let cGreen = "#1ed92d";
@@ -598,6 +639,7 @@ export interface DiagramPath {
 	waypoints: {x: number, y: number}[];
 }
 
+
 export abstract class BPMNElement {
 	lastChangedISO: string = new Date().toISOString();
 	description: string = "";
@@ -621,7 +663,11 @@ export abstract class BPMNElement {
 		return this.changeType !== ElementChangeType.NONE;
 	}
 
-	public setChange(changeType: ElementChangeType) {
+	/**
+	 * sets the Change Type of an bpmn element.
+	 * @param changeType the change type to set it to.
+	 */
+	public setChange(changeType: ElementChangeType): void {
 		let elementsTostyle = [];
 		this.changeType = changeType;
 		let config: ElementStyleConfig = {

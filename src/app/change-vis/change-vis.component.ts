@@ -40,6 +40,13 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		});
 	}
 
+	/**
+	 * Initializes a ProcessChangeModel with given XML and SVG Container.
+	 *
+	 * @param xml the xml string according to BPMN 2.0 specification.
+	 * @param svgContainer the svg container embedded in the DOM for rendering.
+	 * @returns the initialized ProcessChangeModel when successful. Returns null if it was not successful, e.g. because of invalid BPMN format.
+	 */
 	public initProcessChangeModelFromXML = async (xml: string, svgContainer: HTMLElement): Promise<ProcessChangeModel | null> => {
 	
 		return new Promise(async (resolve, reject) => {
@@ -154,7 +161,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	public downloadStringAsFile(filename: string, text: string): void {
+	private downloadStringAsFile(filename: string, text: string): void {
 
 		var element = document.createElement('a');
 		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -166,7 +173,13 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		document.body.removeChild(element);
 	}
 
-	async doSimpleGETRequest<T>(url: string): Promise<T> {
+	/**
+	 * Does a simple HTTP GET request.
+	 *
+	 * @param url the url to be called.
+	 * @returns an object cast to the generic type argument.
+	 */
+	private async doSimpleGETRequest<T>(url: string): Promise<T> {
 		return new Promise((resolve, reject) => {
 			this.http.get(url,  
 			{  

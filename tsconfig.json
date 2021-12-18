@@ -28,6 +28,14 @@
 			"dom"
 		],
 	},
+	"typedocOptions": {
+        "entryPoints": [
+			"src/app/change-vis/change-vis.component.ts",
+			"src/app/lib/process-change-model.ts",
+			"src/app/lib/interactive-svg.ts",
+		],
+        "out": "docs"
+    },
 	"angularCompilerOptions": {
 		"enableI18nLegacyMessageIdFormat": false,
 		"strictInjectionParameters": true,

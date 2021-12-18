@@ -40,8 +40,15 @@ export class SVGUIButton {
 }
 
 
-// we create ourselves a little interactive wrapper for SVGs.
+/**
+ * This class acts as a little wrapper for custom interactive SVGs.
+ * So far only methods relevant for generating BPMN-style graphics are implemented.
+ */
 export class InteractiveSVG {
+
+	/**
+	 * A reference to the svg container in the DOM where it gets rendered.
+	 */
 	svgContainer: HTMLElement;
 	pointerDown: boolean;
 	selectedElementForDrag: SVGElement | null;
@@ -49,11 +56,20 @@ export class InteractiveSVG {
 
 	coloredMarkers: ColoredMarker[] = [];
 	
-	// for panning and zooming. Starts with the identity matrix.
-	// https://www.petercollingridge.co.uk/tutorials/svg/interactive/pan-and-zoom/
+	/**
+	 * A big parent-group for everything inside the svg.
+	 * Essential for panning and zooming. For more info have a look at:
+	 * https://www.petercollingridge.co.uk/tutorials/svg/interactive/pan-and-zoom/
+	 */
 	matrixGroup: SVGElement;
 	currentScale: number;
 	
+	/**
+	 * Initializes the interactive svg.
+	 * @param svgContainer the svg container element where everything gets rendered.
+	 * @param markers An array of markers that get predefined and can then be used in the svg.
+	 * @param uiButtons **Not In Use Yet!** an array to specify UI buttons for the user to interact with.
+	 */
 	constructor(svgContainer: HTMLElement, markers: ColoredMarker[], uiButtons: SVGUIButton[]) {
 		this.svgContainer = svgContainer;
 		this.pointerDown = false;
@@ -197,7 +213,12 @@ export class InteractiveSVG {
 		this.svgContainer.removeChild(this.matrixGroup);
 	}
 
-	public applySVGMatrixTransformations(element: SVGElement | SVGPathElement, translateX, translateY, rotateAngle, scaleFactor): void {
+	/**
+	 * Applies transformations on an SVG element, based on the parameters given.
+	 * So translation, rotation and scaling can be done in one go.
+	 * Requires the element to have a transform attribute.
+	 */
+	public applySVGMatrixTransformations(element: SVGElement | SVGPathElement, translateX: number, translateY: number, rotateAngle: number, scaleFactor: number): void {
 		let matrixRaw = element.getAttributeNS(null, "transform");
 		let matrix = matrixRaw?.replace("matrix(", "").replace(")", "").split(" ").map(str => parseFloat(str));
 		let m = new DOMMatrix(matrix);
@@ -207,6 +228,10 @@ export class InteractiveSVG {
 		element.setAttributeNS(null, "transform", m.toString());
 	}
 
+	/**
+	 * Zooms into the midpoint of the own matrix-group element.
+	 * @param scale the factor of scaling applied. The current scale is multiplied by that amount.
+	 */
 	private zoom = (scale: number): void => {
 		// TODO: at best give svg a viewbox that fits the whole process. and then get center from viewbox.
 		let viewBox = this.svgContainer.getAttributeNS(null, "viewBox")?.split(" ") ?? [];
@@ -371,6 +396,9 @@ export class InteractiveSVG {
 		return newShape;
 	}
 
+	/**
+	 * Sets some common attributes of an element for the interactive svg class to work.
+	 */
 	private setStandardAttributes(element: SVGElement | SVGPathElement, id: string, draggable: boolean, dragHandleForParent: boolean, style: string | null, classNames = ""): void {
 		element.setAttributeNS(null, "id", id);
 		let className = classNames;
