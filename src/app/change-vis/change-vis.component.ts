@@ -223,7 +223,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 			}
 			this.pcmBefore = await this.initProcessChangeModelFromXML(str, containerProcessBefore);
 
-			console.log('pcm before is', this.pcmBefore);
 			if (!this.pcmBefore) {
 				fileEl1.className = fileEl1?.className.replace(/is\-(in)*valid/, "is-invalid");
 			} else {
@@ -310,6 +309,11 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnDestroy(): void {
-
+		if (this.pcmBefore) {
+			this.pcmBefore.destroy();
+		}
+		if (this.pcmAfter) {
+			this.pcmAfter.destroy();
+		}
 	}
 }

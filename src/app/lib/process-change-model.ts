@@ -482,6 +482,34 @@ export class ProcessChangeModel {
 		}
 	}
 
+	private buildDeltaInfo(): Partial<BPMNElement>[] {
+		let elements: Partial<BPMNElement>[] = [];
+
+		for(const edge of this.changeTrackingEdges) {
+			let change = null;
+
+
+			if (edge.new?.getChangeType() === ElementChangeType.Added) {
+				change = cloneDeep(edge.new);
+			} else if (edge.new?.getChangeType() === ElementChangeType.Removed) {
+				change = cloneDeep(edge.new);
+			}
+
+			if (change !== null) {
+				elements.push(change);
+			}
+		}
+
+		return elements;
+	}
+
+
+	/**
+	 * Quick helper method to calculate AABB overlap region.
+	 * @param a rectangle a
+	 * @param b rectangel b
+	 * @returns a value between 0 and 1, indicating how much two AABB regions overlap. 0 means not at all. 1 means the smaller one of both is completely covered.
+	 */
 	private getRectangleIntersectionArea(a: {x: number, y: number, width: number, height: number},
 										b: {x: number, y: number, width: number, height: number}): number {
 		let dx = Math.max(0, Math.min(a.x+a.width, b.x+b.width) - Math.max(a.x, b.x));
@@ -573,6 +601,28 @@ export enum BPMNEdgeType {
 export enum BPMNNodeType {
 	"StartEvent",
 	"EndEvent",
+	"IntermediateThrowEvent",
+	"EscalationIntermediateThrowEvent",
+	"EscalationEndEvent",
+	"MessageStartEvent",
+	"MessageIntermediateCatchEvent",
+	"MessageIntermediateThrowEvent",
+	"MessageEndEvent",
+	"TimerStartEvent",
+	"TimerIntermediateCatchEvent",
+	"ConditionalStartEvent",
+	"ConditionalIntermediateCatchEvent",
+	"LinkIntermediateCatchEvent",
+	"LinkIntermediateThrowEvent",
+	"CompensationIntermediateThrowEvent",
+	"SignalStartEvent",
+	"SignalIntermediateCatchEvent",
+	"SignalIntermediateThrowEvent",
+	"SignalEndEvent",
+	"TerminateEndEvent",
+	"CompensationEndEvent",
+	"ErrorEndEvent",
+
 	"Task",
 	"UserTask",
 	"SendTask",
@@ -584,10 +634,12 @@ export enum BPMNNodeType {
 	"StandardLoopTask",
 	"MultiInstanceLoopTaskHorizontal",
 	"MultiInstanceLoopTaskVertical",
+
 	"GatewayAND",
 	"GatewayOR",
 	"ComplexGateway",
 	"EventBasedGateway",
+	
 	"CallActivity",
 	"SubProcess"
 }
