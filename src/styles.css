@@ -1,3 +1,15 @@
+p {
+  font-family: "Roboto", sans-serif;
+}
+h1,
+h2,
+h3 {
+  font-family: "Comfortaa", cursive;
+}
+
+button {
+  font-family: "Roboto", sans-serif !important;
+}
 /* change vis component */
 .networkContainer {
   margin: 1em 1em 8em 1em;
@@ -14,6 +26,11 @@
   background: linear-gradient(to top left, #28b487 0%, #7dd56f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.nav-i-font,
+.navbar-brand {
+  font-family: "Comfortaa", cursive;
 }
 
 /* Title */
@@ -71,8 +88,6 @@
   text-align: center;
 }
 
-#instructions {
-}
 .giant-number-left {
   font-family: Holtwood One SC, serif;
   font-size: 300px;
@@ -119,6 +134,17 @@
 .social-icon {
   margin: 20px 10px;
 }
+
+.app-heading {
+  display: none;
+}
+/* --------------------- APP Customizations  ---------------------  */
+.feature-container-app-button {
+  display: flex;
+  justify-content: center;
+}
+
+/* --------------------- Media Querries - Landing Page  ---------------------  */
 
 @media (max-width: 990px) {
   #title {
@@ -170,3 +196,29 @@
     align-self: center;
   }
 }
+
+/* --------------------- Media Querries - App Page  ---------------------  */
+
+@media (max-width: 1200px) {
+  .app-heading {
+    display: block;
+  }
+  #mySVGFinal {
+    width: 20em;
+    height: 20em;
+  }
+  #mySVGBefore {
+    width: 20em;
+    height: 20em;
+  }
+
+  #mySVGAfter {
+    width: 20em;
+    height: 20em;
+  }
+  .feature-container-app {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5em;
+  }
+} ;
