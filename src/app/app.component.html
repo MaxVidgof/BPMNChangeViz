@@ -2,6 +2,7 @@
   <div class="container-fluid">
     <a class="navbar-brand" href="#">Change Viz</a>
     <button
+      (click)="isNavbarCollapsed = !isNavbarCollapsed"
       class="navbar-toggler"
       type="button"
       data-bs-toggle="collapse"
@@ -13,7 +14,7 @@
       <i class="fas fa-bars"></i>
     </button>
 
-    <div class="collapse navbar-collapse" id="navbarColor01">
+    <div [ngClass]="(isNavbarCollapsed ? 'collapse' : '') + ' navbar-collapse'" id="navbarColor01">
       <ul class="navbar-nav me-auto">
         <li class="nav-item nav-i-font">
           <a class="nav-link active" [routerLink]="['/home']"
