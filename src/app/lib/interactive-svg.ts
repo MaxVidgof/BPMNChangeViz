@@ -229,7 +229,7 @@ export class InteractiveSVG {
 	}
 
 	/**
-	 * Zooms into the midpoint of the own matrix-group element.
+	 * Zooms into the midpoint of the own container.
 	 * @param scale the factor of scaling applied. The current scale is multiplied by that amount.
 	 */
 	private zoom = (scale: number): void => {
@@ -241,7 +241,7 @@ export class InteractiveSVG {
 		let centerY = parseFloat(viewBox[3]) / 2;domRenderedBox.height / 2;
 
 		let modifiedScale = this.currentScale * scale;
-		if (modifiedScale >= 3.0) {
+		if (modifiedScale >= 4.0) {
 			scale = 1.0;
 		} else if(modifiedScale <= 0.2) {
 			scale = 1.0;
@@ -259,6 +259,11 @@ export class InteractiveSVG {
 		};
 	}
 
+	/**
+	 * adds an svg element to the container.
+	 * @param element the element to add
+	 * @param recalculateSVGViewFit whether to recalculate fit-to-view
+	 */
 	public addSVGElement(element: SVGElement, recalculateSVGViewFit: boolean = false): void {
 		element.setAttributeNS(null, "svg-index", ""+this.matrixGroup.children.length);
 		this.matrixGroup.appendChild(element);
@@ -340,7 +345,20 @@ export class InteractiveSVG {
 		return newShape;
 	}
 
-	public createGroupOfTextlines = (id: string, draggableAll: boolean, dragHandleAll: boolean, xAll: number, yAll: number, textlines: string[], styleAll: string, rotationAngleForAll: number, classNames: string): SVGElement => {
+	/**
+	 * creates a group of textlines, centered vertically
+	 * @param id the id of the group
+	 * @param draggableAll whether every textline should have that property
+	 * @param dragHandleAll whether every textline should have that property
+	 * @param xAll x position for center of this multiline group
+	 * @param yAll y position for center of this multiline group
+	 * @param textlines the actual textlines
+	 * @param styleAll the style to apply. Can be a string for all or an array of strings for each individual line.
+	 * @param rotationAngleForAll the rotation to rotate the whole group of textlines
+	 * @param classNames the classnames to give each textline.
+	 * @returns 
+	 */
+	public createGroupOfTextlines = (id: string, draggableAll: boolean, dragHandleAll: boolean, xAll: number, yAll: number, textlines: string[], styleAll: string | string[], rotationAngleForAll: number, classNames: string): SVGElement => {
 		let group = this.createSVGGroup(id, true,
 			...this.createTextlines('', draggableAll, dragHandleAll, 0, 0, textlines, styleAll, classNames)
 		);
@@ -355,10 +373,15 @@ export class InteractiveSVG {
 
 		return group;
 	}
-	public createTextlines = (idForAll: string, draggableAll: boolean, dragHandleAll: boolean, xAll: number, yAll: number, textlines: string[], styleAll: string, classNames: string): SVGTextElement[] => {
+	public createTextlines = (idForAll: string, draggableAll: boolean, dragHandleAll: boolean, xAll: number, yAll: number, textlines: string[], styleAll: string | string[], classNames: string): SVGTextElement[] => {
 		let elements: SVGTextElement[] = [];
+
+		if (typeof(styleAll) !== 'string') {
+			console.log(typeof(styleAll), styleAll);
+		}
+
 		for (let i=0; i<textlines.length; i++) {
-			elements.push(this.createText(idForAll, draggableAll, dragHandleAll, xAll, yAll, textlines[i], i, textlines.length, styleAll, classNames));
+			elements.push(this.createText(idForAll, draggableAll, dragHandleAll, xAll, yAll, textlines[i], i, textlines.length, typeof(styleAll) === 'string' ? styleAll : styleAll[i], classNames));
 		}
 		return elements;
 	}
@@ -369,6 +392,9 @@ export class InteractiveSVG {
 		newShape.setAttributeNS(null, "dy", "" + (15 * ( (-(numTotalLines-1)/2) + lineindex)));
 		newShape.setAttributeNS(null, "dominant-baseline", "middle");
 		newShape.setAttributeNS(null, "text-anchor", "middle");
+		if (style != null) {
+			newShape.setAttributeNS(null, "style", style);
+		}
 		let textNode = document.createTextNode(textline);
 		newShape.appendChild(textNode);
 		this.setStandardAttributes(newShape, id, draggable, dragHandleForParent, style, classNames);

@@ -51,6 +51,7 @@
         <!-- SVG's must remain - everything else can be changed  -->
         <svg
           xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
           class="networkContainer"
           id="mySVGBefore"
           width="27em"
@@ -62,6 +63,7 @@
         <!-- SVG's must remain - everything else can be changed  -->
         <svg
           xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
           class="networkContainer"
           id="mySVGAfter"
           width="27em"
@@ -91,6 +93,7 @@
     <div class="feature-container-app">
       <svg
         xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
         class="networkContainer"
         id="mySVGFinal"
         width="100%"
@@ -98,15 +101,42 @@
       ></svg>
     </div>
 
-    <div class="feature-container-app-button">
-      <button
-        type="button"
-        (click)="export()"
-        class="btn btn-primary btn-lg btn-custom"
-        style="margin-bottom: 3em"
-      >
-        Export to DOT
-      </button>
-    </div>
+    <div class="row align-items-start">
+      <div class="col">
+        <div class="feature-container-app-button">
+          <button
+            type="button"
+            (click)="exportAsSVG()"
+            class="btn btn-primary btn-lg btn-custom"
+            style="margin-bottom: 3em"
+          >
+            Export Model as .svg
+          </button>
+        </div>
+      </div>
+      <div class="col">
+        <div class="feature-container-app-button">
+          <button
+            type="button"
+            (click)="exportAsDOT()"
+            class="btn btn-primary btn-lg btn-custom"
+            style="margin-bottom: 3em"
+          >
+            Export Model as .dot
+          </button>
+        </div>
+      </div>
+      <div class="col">
+        <div class="feature-container-app-button">
+          <button
+            type="button"
+            (click)="exportDelta()"
+            class="btn btn-primary btn-lg btn-custom"
+            style="margin-bottom: 3em"
+          >
+            Export Delta as .json
+          </button>
+        </div>
+      </div>
   </div>
 </div>

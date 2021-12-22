@@ -10,7 +10,6 @@ import { ColoredMarker, InteractiveSVG, SVGUIButton } from "./interactive-svg";
 
 import {findBestMatch, compareTwoStrings} from "string-similarity"
 
-import { HashList } from 'hashlist-typescript';
 import * as cloneDeep from 'lodash.clonedeep';
 
 /**
@@ -79,10 +78,20 @@ export class ProcessChangeModel {
 
 	}
 
+	/**
+	 * returns the whole rendered svg stuff as string.
+	 */
+	public getSVGContent = (): string => {
+		return this.interactiveSVG.svgContainer.outerHTML;
+	}
+
 	public getElements = (): BPMNElement[] => {
 		return this.elements;
 	}
 
+	/**
+	 * clears up important variables.
+	 */
 	public destroy = (): void => {
 		this.interactiveSVG.destroy();
 		this.elements = [];
@@ -97,7 +106,8 @@ export class ProcessChangeModel {
 
 		let correspondingSVGElement: SVGElement | null = null;
 		if (element instanceof BPMNNode) {
-			if (element.type === BPMNNodeType.StartEvent || element.type === BPMNNodeType.EndEvent) {
+			if (element.type === BPMNNodeType.StartEvent || element.type === BPMNNodeType.EndEvent ||
+				element.type === BPMNNodeType.IntermediateThrowEvent || element.type === BPMNNodeType.IntermediateCatchEvent) {
 				correspondingSVGElement = this.createRoundEventShape(element);
 			} else if (element.type === BPMNNodeType.Task || element.type === BPMNNodeType.SendTask || element.type === BPMNNodeType.ReceiveTask || element.type === BPMNNodeType.SubProcess ||
 						element.type === BPMNNodeType.ManualTask || element.type === BPMNNodeType.UserTask || element.type === BPMNNodeType.ServiceTask ||
@@ -125,6 +135,11 @@ export class ProcessChangeModel {
 		}
 	}
 
+	/**
+	 * creates an BPMN edge shape
+	 * @param element the BPMNEdge to use as basis
+	 * @returns an SVG element representing this BPMN element.
+	 */
 	private createEdgeShapeByWaypoints = (element: BPMNEdge): SVGElement => {
 
 		let arrowHeadName = element.type === BPMNEdgeType.MessageFlow ? 'MessageEnd ArrowHead White' : 'FlowEnd ArrowHead Black';
@@ -173,22 +188,95 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;	
 	}
 
+	/**
+	 * creates an BPMN event shape
+	 * @param element the bpmn node and event definition to use as basis
+	 * @returns an SVG element representing this BPMN element.
+	 */
 	private createRoundEventShape = (element: BPMNNode): SVGElement => {
 
-		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
+		let sw = "1px";
+		let iconFill = 'none';
+		let iconPaths: string[] = [];
+		let swIcon = "1px";
+		if (element.type === BPMNNodeType.StartEvent || element.type === BPMNNodeType.IntermediateCatchEvent ||
+				element.type === BPMNNodeType.IntermediateThrowEvent) {
+			sw = "1px";
+		} else if (element.type === BPMNNodeType.EndEvent) {
+			sw = "3px";
+		}
+
+		let elementslist: SVGElement[] = [
 			this.interactiveSVG.createCircle('', true, true, 0, 0,
 										element.diagramShape.width / 2,
-										'fill: white; stroke: black; stroke-width: 3px;', "styler"),
+										'fill: white; stroke: black; stroke-width: ' + sw + ';', "styler"),
 			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
 				x: -element.diagramShape.width/2 / 3,
 				y: -element.diagramShape.height / 2,
 				width: 30, height: 30
 			}, '', 'change-icon')
-		);
+		];
+		
+		// second ring
+		if (element.type === BPMNNodeType.IntermediateCatchEvent || element.type === BPMNNodeType.IntermediateThrowEvent) {
+			elementslist.push(
+				this.interactiveSVG.createCircle('', false, false, 0, 0,
+				element.diagramShape.width / 2 - 3,
+				'fill: none; stroke: black; stroke-width: ' + sw + ';', "styler"),
+			);
+		} 
+
+
+		//check event definition for symbol path
+		if (element.eventDefinition != null) {
+
+			iconPaths = BPMNEventDefinitionMappings.find(e => e.type === element.eventDefinition)?.iconPaths ?? [];
+			iconFill = element.type === BPMNNodeType.IntermediateThrowEvent || element.type === BPMNNodeType.EndEvent ? 'black' : 'none';
+			
+			//timer clock
+			if (element.eventDefinition === EventDefinitionType.TimerEventDefinition) {
+				swIcon = "3px";
+
+
+				//clock ring
+				elementslist.push(
+					this.interactiveSVG.createCircle('', false, false, 0, 0, 11,
+					'fill: none; stroke: black; stroke-width: ' + swIcon + ';', "styler"),
+				);
+
+				//create the little clock ticks
+				for (let i=0; i<359; i+=30) {
+					let tick = this.interactiveSVG.createPathByString('', false, false, 'M 18,18 m 0,7.5 l -0,2.25', 'linecap=square; fill: none; stroke-width: "1px"; stroke: black', '');
+					this.interactiveSVG.applySVGMatrixTransformations(tick, -element.diagramShape.width/2, -element.diagramShape.height/2, i, 1);
+					elementslist.push(tick);
+				}
+			}
+
+			
+			//terminate filled circle
+			if (element.eventDefinition === EventDefinitionType.TerminateEventDefinition) {
+				let dot = this.interactiveSVG.createCircle('', false, false, 0, 0, 10, 'fill: black; stroke: black', 'styler');
+				elementslist.push(dot);
+			}
+
+			for (const p of iconPaths) {
+				let pathElement = this.interactiveSVG.createPathByString('', false, false, p, 'fill: ' + iconFill + '; stroke: black; stroke-width: "2px";', "styler");
+				this.interactiveSVG.applySVGMatrixTransformations(pathElement, -element.diagramShape.width/2, -element.diagramShape.height/2, 0, 1);
+				elementslist.push(pathElement);
+			}
+		}
+
+
+		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true, ...elementslist);
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x + element.diagramShape.width / 2, element.diagramShape.y + element.diagramShape.height / 2, 0, 1.0);
 		return correspondingSVGElement;					
 	}
 
+	/**
+	 * creates a text in SVG representing this text annotation element
+	 * @param element the BPMNTextAnnotation to use as basis
+	 * @returns an SVG element representing this BPMN element.
+	 */
 	private createRectangleTextAnnotation = (element: BPMNTextAnnotation): SVGElement => {
 
 		//adjust style
@@ -213,6 +301,11 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;					
 	}
 
+	/**
+	 * creates a swimlane/participant shape
+	 * @param element the BPMNParticipant to use as basis
+	 * @returns an SVG element representing this BPMN element.
+	 */
 	private createRectangleParticipantShape = (element: BPMNParticipant): SVGElement => {
 
 		//adjust style
@@ -235,6 +328,11 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;
 	}
 
+	/**
+	 * creates an BPMN activity/task shape
+	 * @param element the BPMNNode to use as basis
+	 * @returns an SVG element representing this BPMN element.
+	 */
 	private createRectangleActivityShape = (element: BPMNNode): SVGElement => {
 
 		//adjust style
@@ -247,10 +345,20 @@ export class ProcessChangeModel {
 			stroke = 'white';
 		}
 
+		//if the element has older descriptions, show them as strike-through.
+		//therefore we need to set the styles of the textlines individually.
+		let textlines = element.description.split(/[\r\n]/);
+		let textstyles: string | string[] = 'stroke: black; font-size: 9px; stroke-width: "1px";';
+		if (element.descriptionBeforeChangeHappened.length > 0) {
+			textlines = [...element.descriptionBeforeChangeHappened.split(/[\r\n]/), ...element.description.split(/[\r\n]/)];
+			textstyles = textlines.map<string>((st, index, arr) => 'stroke: black; font-size: 8px; stroke-width: "0.6px";' + (index < element.descriptionBeforeChangeHappened.split(/[\r\n]/).length ? ' text-decoration: line-through;' : ''))
+		}
+
 		let elementsInGroup: (SVGElement | SVGPathElement)[] = [
 			this.interactiveSVG.createRectangle('', false, false, 0, 0, element.diagramShape.width,
 				element.diagramShape.height, 'fill: white; stroke: black; stroke-width: 3px;', "styler"),
-			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width /2, element.diagramShape.height/2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
+			this.interactiveSVG.createGroupOfTextlines(element.id + '_desc', false, false, element.diagramShape.width /2, element.diagramShape.height/2,
+				textlines, textstyles, 0, "styler"),
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
 			...pathIcons.map(icon => this.interactiveSVG.createPathByString('', false, false, icon, 'fill: ' + fill + '; stroke: ' + stroke + '; stroke-width: 1px;', "styler")),
 			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
@@ -272,6 +380,11 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;					
 	}
 
+	/**
+	 * creates a BPMN gateway shape
+	 * @param element the BPMNNode to use as basis
+	 * @returns an SVG element representing this BPMN element.
+	 */
 	private createRotSquareGateShape = (element: BPMNNode): SVGElement => {
 
 		//adjust style
@@ -319,6 +432,16 @@ export class ProcessChangeModel {
 				let oldd: BPMNNode | null = null;
 				if (matches.bestMatch.rating >= 0.91) {
 					oldd = otherPcm.elements.find(e => e.description === matches.bestMatch.target) as BPMNNode ?? null;
+
+					// change the text to show what it was before with strike-through
+					// for that it is best we re-create the shape, because we need to know how many lines there are in advance (to position them centrally).
+					if (matches.bestMatch.rating < 1.0) {
+						console.log('found a match that is better than 0.91 but worse than 1.0', matches.bestMatch, neww, oldd);
+						neww.svg?.remove();
+						neww.descriptionBeforeChangeHappened = oldd.description;
+						neww.svg = this.createRectangleActivityShape(neww as BPMNNode);
+						this.interactiveSVG.addSVGElement(neww.svg, true);
+					}
 				}
 
 				if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
@@ -482,25 +605,92 @@ export class ProcessChangeModel {
 		}
 	}
 
-	private buildDeltaInfo(): Partial<BPMNElement>[] {
-		let elements: Partial<BPMNElement>[] = [];
+	/**
+	 * builds the delta info and returns it as json 
+	 * @returns a json string being the delta (added/removed etc. elements) info
+	 */
+	public getDeltaInfoExport(): string {
+		let changes = this.buildDeltaInfo();
+		let delta = {
+			changes
+		}
+		console.log(JSON.stringify(delta, null, "\t"));
+		return JSON.stringify(delta, null, "\t");
+	}
+	private buildDeltaInfo(): ProcessDeltaInfo {
+		let added: (Partial<BPMNElement> & any)[] = [];
+		let removed: (Partial<BPMNElement> & any)[] = [];
+		let trafficChange: {id: string, trafficDelta: number}[] = [];
 
-		for(const edge of this.changeTrackingEdges) {
-			let change = null;
+		// use a blacklist to kick out information we dont want to export.
+		let blacklistProperties = ['inputs', 'outputs', 'input', 'output', 'svg', 'descriptionBeforeChangeHappened', 'diagramShape', 'changeType'];
 
+		//go through added and removed elements. Because here we have to push the whole object as delta info.
+		for(const el of this.elements.filter(e => e.getChangeType() === ElementChangeType.Added || e.getChangeType() === ElementChangeType.Removed)) {
 
-			if (edge.new?.getChangeType() === ElementChangeType.Added) {
-				change = cloneDeep(edge.new);
-			} else if (edge.new?.getChangeType() === ElementChangeType.Removed) {
-				change = cloneDeep(edge.new);
+			let changeElement: any = cloneDeep(el);
+
+			//get rid of circular structures and replace references through IDs
+			if (el instanceof BPMNNode) {
+
+				//when it has reference to old node, use the old node's infos, because it got removed.
+				let possibleOldReference = this.changeTrackingEdges.find(e => e.new?.id === changeElement.id);
+				if (possibleOldReference?.old) {
+					changeElement = cloneDeep(possibleOldReference.old);
+				}
+
+				changeElement.outputIDs = changeElement.outputs.map(o => o.id) ?? [];
+				changeElement.inputIDs = changeElement.inputs.map(o => o.id) ?? [];
+			} else if (el instanceof BPMNEdge) {
+				changeElement.outputID = el.output?.id ?? null;
+				changeElement.inputID = el.input?.id ?? null;
 			}
 
-			if (change !== null) {
-				elements.push(change);
+
+			//kick out blacklisted properties. Garbage Collection, I choose you!
+			for (const prop of blacklistProperties) {
+				delete changeElement[prop];
+			}
+
+			if (el.getChangeType() === ElementChangeType.Added) {
+				added.push(changeElement);
+			} else if (el.getChangeType() === ElementChangeType.Removed) {
+				removed.push(changeElement);
 			}
 		}
 
-		return elements;
+		//do traffic change elements
+		for (const el of this.elements.filter(e => e.getChangeType() === ElementChangeType.IncreasedTraffic || e.getChangeType() === ElementChangeType.DecreasedTraffic)) {
+			
+			let change = {
+				id: el.id,
+				trafficDelta: 0
+			};
+
+			//search for traffic change. The nodes can be directly accessed via changetrackingedges.
+			//the edges are not directly accessible, but findable by quick triangulation (checking of input and output).
+			if (el instanceof BPMNNode) {
+				let referenceToOld = this.changeTrackingEdges.find(e => e.new === el);
+				if (referenceToOld) {
+					change.trafficDelta = el.traffic - (referenceToOld.old?.traffic ?? 0);
+				}
+			} else if (el instanceof BPMNEdge){
+				let referenceInput = this.changeTrackingEdges.find(e => e.new === el.input);
+				let referenceOutput = this.changeTrackingEdges.find(e => e.new === el.output);
+				if (referenceInput?.old && referenceOutput?.old) {
+					let referenceOld = referenceOutput.old.inputs.find(i => i.input === referenceInput?.old);
+					if (referenceOld) {
+						change.trafficDelta = el.traffic - referenceOld.traffic;
+					}
+				}
+			}
+
+			trafficChange.push(change);
+		}
+
+		return {
+			added, removed, trafficChange
+		};
 	}
 
 
@@ -565,13 +755,25 @@ export class ProcessChangeModel {
 	}
 }
 
+/**
+ * this type describes the properties of a delta information.
+ * it consists of an array of added elements, an array of removed elements, and an array of trafficchanges
+ */
+export type ProcessDeltaInfo = {
+	added: (Partial<BPMNElement> & any)[];
+	removed: (Partial<BPMNElement> & any)[];
+	trafficChange: ({id: string, trafficDelta: number})[];
+}
 
+/**
+ * This enum represents the change type
+ */
 export enum ElementChangeType {
-	"NONE",
-	"Added",
-	"Removed",
-	"IncreasedTraffic",
-	"DecreasedTraffic"
+	"NONE" = "NONE",
+	"Added" = "Added",
+	"Removed" = "Removed",
+	"IncreasedTraffic" = "IncreasedTraffic",
+	"DecreasedTraffic" = "DecreasedTraffic"
 }
 
 /**
@@ -593,60 +795,83 @@ export type BPMNNodeTypeEntry = {
 	iconPaths: string[];
 }
 
+export type BPMNEventDefinitionEntry = {
+	bpmnIoEventType: string;
+	type: EventDefinitionType;
+	iconPaths: string[];
+}
+
 export enum BPMNEdgeType {
-	"MessageFlow",
-	"SequenceFlow"
+	"MessageFlow" = "MessageFlow",
+	"SequenceFlow" = "SequenceFlow"
 }
 
+/**
+ * this enum defines the possible event 'flavors'
+ */
+export enum EventDefinitionType {
+	"MessageEventDefinition",
+	"TimerEventDefinition",
+	"SignalEventDefinition",
+	"LinkEventDefinition",
+	"CompensateEventDefinition",
+	"EscalationEventDefinition",
+	"ConditionalEventDefinition",
+	"TerminateEventDefinition",
+}
+
+/**
+ * this mapping matches event flavors and bpmn-io types and icons.
+ */
+export const BPMNEventDefinitionMappings: BPMNEventDefinitionEntry[] = [
+	{bpmnIoEventType: 'bpmn:MessageEventDefinition', type: EventDefinitionType.MessageEventDefinition, iconPaths: ['m 8.459999999999999,11.34 l 0,12.6 l 18.900000000000002,0 l 0,-12.6 z l 9.450000000000001,5.4 l 9.450000000000001,-5.4']},
+	{bpmnIoEventType: 'bpmn:TimerEventDefinition', type: EventDefinitionType.TimerEventDefinition, iconPaths: ['M 18,18 l 2.25,-7.5 m -2.25,7.5 l 5.25,1.5']},
+	{bpmnIoEventType: 'bpmn:SignalEventDefinition', type: EventDefinitionType.SignalEventDefinition, iconPaths: ['M 18,7.2 l 9,16.2 l -18,0 Z']},
+	{bpmnIoEventType: 'bpmn:LinkEventDefinition', type: EventDefinitionType.LinkEventDefinition, iconPaths: ['m 20.52,9.468 0,4.4375 -13.5,0 0,6.75 13.5,0 0,4.4375 9.84375,-7.8125 -9.84375,-7.8125 z']},
+	{bpmnIoEventType: 'bpmn:CompensateEventDefinition', type: EventDefinitionType.CompensateEventDefinition, iconPaths: ['m 7.92,18 9,-6.5 0,13 z m 9.3,-0.4 8.7,-6.1 0,13 -8.7,-6.1 z']},
+	{bpmnIoEventType: 'bpmn:EscalationEventDefinition', type: EventDefinitionType.EscalationEventDefinition, iconPaths: ['M 18,7.2 l 8,20 l -8,-7 l -8,7 Z']},
+	{bpmnIoEventType: 'bpmn:ConditionalEventDefinition', type: EventDefinitionType.ConditionalEventDefinition, iconPaths: ['M 10.5,8.5 l 14.5,0 l 0,18 l -14.5,0 Z M 12.5,11.5 l 10.5,0 M 12.5,14.5 l 10.5,0 M 12.5,17.5 l 10.5,0 M 12.5,20.5 l 10.5,0 M 12.5,23.5 l 10.5,0 M 12.5,26.5 l 10.5,0']},
+	{bpmnIoEventType: 'bpmn:TerminateEventDefinition', type: EventDefinitionType.TerminateEventDefinition, iconPaths: []},
+];
+
+/**
+ * this enum represents the different node types. Events, gateways, tasks etc.
+ */
 export enum BPMNNodeType {
-	"StartEvent",
-	"EndEvent",
-	"IntermediateThrowEvent",
-	"EscalationIntermediateThrowEvent",
-	"EscalationEndEvent",
-	"MessageStartEvent",
-	"MessageIntermediateCatchEvent",
-	"MessageIntermediateThrowEvent",
-	"MessageEndEvent",
-	"TimerStartEvent",
-	"TimerIntermediateCatchEvent",
-	"ConditionalStartEvent",
-	"ConditionalIntermediateCatchEvent",
-	"LinkIntermediateCatchEvent",
-	"LinkIntermediateThrowEvent",
-	"CompensationIntermediateThrowEvent",
-	"SignalStartEvent",
-	"SignalIntermediateCatchEvent",
-	"SignalIntermediateThrowEvent",
-	"SignalEndEvent",
-	"TerminateEndEvent",
-	"CompensationEndEvent",
-	"ErrorEndEvent",
+	"StartEvent" = "StartEvent",
+	"EndEvent" = "EndEvent",
+	"IntermediateThrowEvent" = "IntermediateThrowEvent",
+	"IntermediateCatchEvent" = "IntermediateCatchEvent",
 
-	"Task",
-	"UserTask",
-	"SendTask",
-	"ReceiveTask",
-	"ManualTask",
-	"ScriptTask",
-	"BusinessRuleTask",
-	"ServiceTask",
-	"StandardLoopTask",
-	"MultiInstanceLoopTaskHorizontal",
-	"MultiInstanceLoopTaskVertical",
+	"Task" = "Task",
+	"UserTask" = "UserTask",
+	"SendTask" = "SendTask",
+	"ReceiveTask" = "ReceiveTask",
+	"ManualTask" = "ManualTask",
+	"ScriptTask" = "ScriptTask",
+	"BusinessRuleTask" = "BusinessRuleTask",
+	"ServiceTask" = "ServiceTask",
+	"StandardLoopTask" = "StandardLoopTask",
+	"MultiInstanceLoopTaskHorizontal" = "MultiInstanceLoopTaskHorizontal",
+	"MultiInstanceLoopTaskVertical" = "MultiInstanceLoopTaskVertical",
 
-	"GatewayAND",
-	"GatewayOR",
-	"ComplexGateway",
-	"EventBasedGateway",
+	"GatewayAND" = "GatewayAND",
+	"GatewayOR" = "GatewayOR",
+	"ComplexGateway" = "ComplexGateway",
+	"EventBasedGateway" = "EventBAsedGateway",
 	
-	"CallActivity",
-	"SubProcess"
+	"CallActivity" = "CallActivity",
+	"SubProcess" = "SubProcess"
 }
 
+/**
+ * this mapping matches bpmn io types with bpmn types with icon paths
+ */
 export const BPMNNodeTypeMappings: BPMNNodeTypeEntry[] = [
 	{bpmnIoType: 'bpmn:StartEvent', type: BPMNNodeType.StartEvent, iconPaths: ['']},
 	{bpmnIoType: 'bpmn:EndEvent', type: BPMNNodeType.EndEvent, iconPaths: ['']},
+	{bpmnIoType: 'bpmn:IntermediateThrowEvent', type: BPMNNodeType.IntermediateThrowEvent, iconPaths: ['']},
+	{bpmnIoType: 'bpmn:IntermediateCatchEvent', type: BPMNNodeType.IntermediateCatchEvent, iconPaths: ['']},
 	{bpmnIoType: 'bpmn:ExclusiveGateway', type: BPMNNodeType.GatewayOR, iconPaths: ['m 16,15 7.42857142857143,9.714285714285715 -7.42857142857143,9.714285714285715 3.428571428571429,0 5.714285714285715,-7.464228571428572 5.714285714285715,7.464228571428572 3.428571428571429,0 -7.42857142857143,-9.714285714285715 7.42857142857143,-9.714285714285715 -3.428571428571429,0 -5.714285714285715,7.464228571428572 -5.714285714285715,-7.464228571428572 -3.428571428571429,0 z']},
 	{bpmnIoType: 'bpmn:ParallelGateway', type: BPMNNodeType.GatewayAND, iconPaths: ['m 23,10 0,12.5 -12.5,0 0,5 12.5,0 0,12.5 5,0 0,-12.5 12.5,0 0,-5 -12.5,0 0,-12.5 -5,0 z']},
 	{bpmnIoType: 'bpmn:ComplexGateway', type: BPMNNodeType.ComplexGateway, iconPaths: ['m 23,13 0,7.116788321167883 -5.018248175182482,-5.018248175182482 -3.102189781021898,3.102189781021898 5.018248175182482,5.018248175182482 -7.116788321167883,0 0,4.37956204379562 7.116788321167883,0  -5.018248175182482,5.018248175182482 l 3.102189781021898,3.102189781021898 5.018248175182482,-5.018248175182482 0,7.116788321167883 4.37956204379562,0 0,-7.116788321167883 5.018248175182482,5.018248175182482 3.102189781021898,-3.102189781021898 -5.018248175182482,-5.018248175182482 7.116788321167883,0 0,-4.37956204379562 -7.116788321167883,0 5.018248175182482,-5.018248175182482 -3.102189781021898,-3.102189781021898 -5.018248175182482,5.018248175182482 0,-7.116788321167883 -4.37956204379562,0 z']},
@@ -685,13 +910,39 @@ export interface DiagramPath {
 	waypoints: {x: number, y: number}[];
 }
 
-
+/**
+ * this class represents an abstract bpmn element that we model, with different properties
+ */
 export abstract class BPMNElement {
+	
+	/**
+	 * A date representing the last time this element was changed / created.
+	 */
 	lastChangedISO: string = new Date().toISOString();
+
+	/**
+	 * A description is possible for every element, not just tasks
+	 */
 	description: string = "";
+
+	/**
+	 * A description that may was different in an older version.
+	 */
+	 descriptionBeforeChangeHappened: string = "";
+
 	//styleConfig: ElementStyleConfig;
+
+	/**
+	 * the traffic flowing through this element. Camunda has seemingly no way to model elements with traffic.
+	 * But the property exists already in our model.
+	 */
 	traffic: number = 0;
+
 	id: string;
+
+	/**
+	 * the reference to the visualized svg element on the svg container.
+	 */
 	svg: SVGElement | null = null;
 
 	private changeType: ElementChangeType;
@@ -699,6 +950,7 @@ export abstract class BPMNElement {
 	constructor(id: string) {
 		this.id = id;
 		this.changeType = ElementChangeType.NONE;
+		this.lastChangedISO = new Date().toISOString();
 	}
 
 	public getChangeType(): ElementChangeType {
@@ -715,6 +967,7 @@ export abstract class BPMNElement {
 	 */
 	public setChange(changeType: ElementChangeType): void {
 		let elementsTostyle = [];
+		this.lastChangedISO = new Date().toISOString();
 		this.changeType = changeType;
 		let config: ElementStyleConfig = {
 			fill: "none",
@@ -763,6 +1016,7 @@ export abstract class BPMNElement {
 export class BPMNNode extends BPMNElement {
 	diagramShape: DiagramRect;
 	type: BPMNNodeType;
+	eventDefinition: EventDefinitionType | null;	// can be null if the node is not an event.
 	outputs: BPMNEdge[] = [];
 	inputs: BPMNEdge[] = [];
 
@@ -770,6 +1024,7 @@ export class BPMNNode extends BPMNElement {
 		super(id);
 		this.diagramShape = shape; 
 		this.type = type;
+		this.eventDefinition = null;
 	}
 }
 

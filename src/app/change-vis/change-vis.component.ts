@@ -13,7 +13,7 @@ import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
 
 
 import ctExtension from '../lib/meta-model-extension.json';
-import { BPMNEdge, BPMNEdgeType, BPMNElement, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ElementChangeType, ProcessChangeModel } from '../lib/process-change-model';
+import { BPMNEdge, BPMNEdgeType, BPMNElement, BPMNEventDefinitionMappings, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ElementChangeType, ProcessChangeModel } from '../lib/process-change-model';
 import { take } from 'rxjs';
 import { readyException } from 'jquery';
 
@@ -76,6 +76,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 			const pcm = new ProcessChangeModel('AwesomeProcess', svgContainer, moddle);
 
+			//create a promise to store actions we want to execute later.
 			let stuffTodoAfterElementsWereAdded: (() => Promise<void>)[] = [];
 
 			for (const element of corrDiagramElements) {
@@ -114,6 +115,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 					//waypoints are absolute in bpmn-js
 					(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
 
+					//set output and input in the promise
 					let idInput = corrDiaElement.bpmnElement.sourceRef?.id;
 					let idOutput = corrDiaElement.bpmnElement.targetRef?.id;
 					let pr = (): Promise<void> => { return new Promise<void>(async (resolve, reject) => {
@@ -134,6 +136,12 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 					(toAdd as BPMNNode).diagramShape = corrDiaElement.bounds;
 					(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 
+					if (el.eventDefinitions && el.eventDefinitions.length > 0) {
+						console.log('bpmn node event definition:', el.eventDefinitions, BPMNEventDefinitionMappings.find(ee => ee.bpmnIoEventType === el.eventDefinitions[0].$type));
+						(toAdd as BPMNNode).eventDefinition = BPMNEventDefinitionMappings.find(ee => ee.bpmnIoEventType === el.eventDefinitions[0].$type)?.type ?? null;
+					}
+
+					// set outputs and inputs in the promise.
 					let idsInput = (el.incoming ?? []).map(el => el.id);
 					let idsOutput = (el.outgoing ?? []).map(el => el.id);
 					let pr = (): Promise<void> => { return new Promise((resolve, reject) => {
@@ -276,10 +284,25 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	public async export(): Promise<void> {
-
-		//download.
+	
+	//download .dot file
+	public exportAsDOT(): void {
 		this.downloadStringAsFile(this.pcmFinal?.name + ".dot", this.pcmFinal?.exportToDOTLanguage() ?? '');
+	}
+
+	//download delta json file
+	public exportDelta(): void {
+		this.downloadStringAsFile(this.pcmFinal?.name + ".delta.json", this.pcmFinal?.getDeltaInfoExport() ?? '');
+	}
+
+
+	//download svg file
+	public exportAsSVG(): void {
+
+		let svgContainer = document.getElementById("mySVGFinal");
+		if (svgContainer) {
+			this.downloadStringAsFile(this.pcmFinal?.name + ".svg", this.pcmFinal?.getSVGContent() ?? '');
+		}
 
 		// TODO: for future: finally export our process again maybe with the moddle
 		/*

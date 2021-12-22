@@ -1,3 +1,7 @@
+# Libraries / Node Modules
+you need Node.js and npm be installed.
+type `npm install` to get all node modules indicated in the `package.json`
+
 # ProcessChangeVisualizer
 
 This project uses Angular CLI as frontend.
