@@ -8,10 +8,11 @@
 
 <div class="container">
   <h1 style="padding: 2em 0em 2em 0em" class="gradient-font">
-    Process Change Visualizer
+    Process Change <br class="app-heading" />
+    Visualizer
   </h1>
 
-  <div class="container">
+  <div class="container-fluid">
     <div class="row align-items-start">
       <div class="col">
         <h3 class="gradient-font">Process Before</h3>
@@ -43,7 +44,7 @@
 
 
   <!-- our 2 SVGs for processes -->
-  <div class="container">
+  <div class="container feature-container-app">
     <div class="row align-items-start">
 
       <div class="col">
@@ -70,7 +71,7 @@
     </div>
   </div>
 
-  <div class="feature-container">
+  <div class="feature-container-app-button">
     <button
       type="button"
       (click)="calculateChangesAndVisualize()"
@@ -87,17 +88,17 @@
   </div>
 
   <div id="change-vis-lower-section">
-    <div class="container">
+    <div class="feature-container-app">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="networkContainer"
         id="mySVGFinal"
-        width="60em"
+        width="100%"
         height="40em"
       ></svg>
     </div>
 
-    <div class="feature-container">
+    <div class="feature-container-app-button">
       <button
         type="button"
         (click)="export()"
