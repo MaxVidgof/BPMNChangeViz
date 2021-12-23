@@ -210,11 +210,6 @@ export class ProcessChangeModel {
 			this.interactiveSVG.createCircle('', true, true, 0, 0,
 										element.diagramShape.width / 2,
 										'fill: white; stroke: black; stroke-width: ' + sw + ';', "styler"),
-			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
-				x: -element.diagramShape.width/2 / 3,
-				y: -element.diagramShape.height / 2,
-				width: 30, height: 30
-			}, '', 'change-icon')
 		];
 		
 		// second ring
@@ -265,6 +260,15 @@ export class ProcessChangeModel {
 				elementslist.push(pathElement);
 			}
 		}
+
+		//at last push the change icon on top
+		elementslist.push(
+			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
+				x: -element.diagramShape.width/2 / 3,
+				y: -element.diagramShape.height / 2,
+				width: 30, height: 30
+			}, '', 'change-icon')
+		);
 
 
 		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true, ...elementslist);
@@ -436,7 +440,6 @@ export class ProcessChangeModel {
 					// change the text to show what it was before with strike-through
 					// for that it is best we re-create the shape, because we need to know how many lines there are in advance (to position them centrally).
 					if (matches.bestMatch.rating < 1.0) {
-						console.log('found a match that is better than 0.91 but worse than 1.0', matches.bestMatch, neww, oldd);
 						neww.svg?.remove();
 						neww.descriptionBeforeChangeHappened = oldd.description;
 						neww.svg = this.createRectangleActivityShape(neww as BPMNNode);
@@ -474,7 +477,7 @@ export class ProcessChangeModel {
 			if (idsOld.indexOf(neww.id) >= 0) {
 				oldd = otherPcm.elements.find(e => e.id === neww.id) as BPMNNode ?? null;
 			} else {
-				console.log("found no element in other with same id as in me.", neww.description);
+				// found no element in other with same id as in me.
 			}
 
 			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
@@ -489,7 +492,7 @@ export class ProcessChangeModel {
 			if (idsNew.indexOf(oldd.id) >= 0) {
 				neww = this.elements.find(e => e.id === oldd.id) as BPMNNode ?? null;
 			} else {
-				console.log("found no element in me with same id as in other.", oldd.description);
+				// found no element in me with same id as in other.
 			}
 
 			if (!this.changeTrackingEdges.find(ed => (ed.old !== null && ed.old === oldd) || (ed.new !== null && ed.new === neww))) {
@@ -614,7 +617,6 @@ export class ProcessChangeModel {
 		let delta = {
 			changes
 		}
-		console.log(JSON.stringify(delta, null, "\t"));
 		return JSON.stringify(delta, null, "\t");
 	}
 	private buildDeltaInfo(): ProcessDeltaInfo {
@@ -739,7 +741,6 @@ export class ProcessChangeModel {
 
 			str += "\t" + el.id + ' [label="' + el.description + '" shape="' + shape + '" color="' + color + '"];' + lfcr;
 		}
-		console.log(this.elements.filter(e => e instanceof BPMNEdge));
 		for (const el of this.elements.filter(e => e instanceof BPMNEdge && e.input && e.output)) {
 			let color = cBlack;
 			if (el.getChangeType() === ElementChangeType.Added) {

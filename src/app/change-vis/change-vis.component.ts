@@ -137,7 +137,6 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 					(toAdd as BPMNNode).description = corrDiaElement.bpmnElement.name ?? '';
 
 					if (el.eventDefinitions && el.eventDefinitions.length > 0) {
-						console.log('bpmn node event definition:', el.eventDefinitions, BPMNEventDefinitionMappings.find(ee => ee.bpmnIoEventType === el.eventDefinitions[0].$type));
 						(toAdd as BPMNNode).eventDefinition = BPMNEventDefinitionMappings.find(ee => ee.bpmnIoEventType === el.eventDefinitions[0].$type)?.type ?? null;
 					}
 

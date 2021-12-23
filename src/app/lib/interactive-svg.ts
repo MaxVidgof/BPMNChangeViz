@@ -275,7 +275,6 @@ export class InteractiveSVG {
 	}
 
 	public switchOrderOfTwoElements(element1: SVGElement | null, element2: SVGElement | null): boolean {
-		console.log('switch!');
 		if (!element1 || !element2) {
 			return false;
 		}
@@ -290,7 +289,6 @@ export class InteractiveSVG {
 		let elementThatComesAfter1 = allElements.find(ee => 
 			parseInt((ee as SVGElement).getAttributeNS(null, "svg-index") ?? '-1') === parseInt(ix1 ?? "-1")+1
 		);
-		console.log(element1, element2, elementThatComesAfter1);
 		
 		//this.matrixGroup.insertBefore(element2, element1);
 		//this.matrixGroup.insertBefore(element1, element2);
@@ -375,10 +373,6 @@ export class InteractiveSVG {
 	}
 	public createTextlines = (idForAll: string, draggableAll: boolean, dragHandleAll: boolean, xAll: number, yAll: number, textlines: string[], styleAll: string | string[], classNames: string): SVGTextElement[] => {
 		let elements: SVGTextElement[] = [];
-
-		if (typeof(styleAll) !== 'string') {
-			console.log(typeof(styleAll), styleAll);
-		}
 
 		for (let i=0; i<textlines.length; i++) {
 			elements.push(this.createText(idForAll, draggableAll, dragHandleAll, xAll, yAll, textlines[i], i, textlines.length, typeof(styleAll) === 'string' ? styleAll : styleAll[i], classNames));
