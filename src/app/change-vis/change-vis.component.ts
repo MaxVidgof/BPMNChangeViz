@@ -8,14 +8,13 @@ import { DataSet } from "vis-data/peer/esm/vis-data"
 // Bpmn js
 import * as BpmnModdle from 'bpmn-moddle/dist/bpmn-moddle.umd.prod.js';
 import * as CamundaModdle from 'camunda-bpmn-moddle';
-import * as BpmnModeler from 'bpmn-js/dist/bpmn-modeler.production.min.js';
-//import * as BpmnViewer from 'bpmn-js/dist/bpmn-navigated-viewer.production.min.js';
+
+import {saveSvgAsPng} from 'save-svg-as-png';
 
 
 import ctExtension from '../lib/meta-model-extension.json';
 import { BPMNEdge, BPMNEdgeType, BPMNElement, BPMNEventDefinitionMappings, BPMNNode, BPMNNodeType, BPMNNodeTypeMappings, BPMNParticipant, BPMNTextAnnotation, ElementChangeType, ProcessChangeModel } from '../lib/process-change-model';
 import { take } from 'rxjs';
-import { readyException } from 'jquery';
 
 @Component({
 	selector: 'app-change-vis',
@@ -298,10 +297,12 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 	//download svg file
 	public exportAsSVG(): void {
 
-		let svgContainer = document.getElementById("mySVGFinal");
-		if (svgContainer) {
-			this.downloadStringAsFile(this.pcmFinal?.name + ".svg", this.pcmFinal?.getSVGContent() ?? '');
-		}
+		this.pcmFinal?.viewFit();
+
+		//optionally save viewport as png. but probably isn't as useful.
+		//saveSvgAsPng(document.getElementById('mySVGFinal'), this.pcmFinal?.name + ".png");
+
+		this.downloadStringAsFile(this.pcmFinal?.name + ".svg", this.pcmFinal?.getSVGContent() ?? '');
 
 		// TODO: for future: finally export our process again maybe with the moddle
 		/*

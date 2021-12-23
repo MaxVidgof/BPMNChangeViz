@@ -188,6 +188,10 @@ export class ProcessChangeModel {
 		return correspondingSVGElement;	
 	}
 
+	public viewFit(): void {
+		this.interactiveSVG.recalculateViewFit();
+	}
+
 	/**
 	 * creates an BPMN event shape
 	 * @param element the bpmn node and event definition to use as basis
@@ -198,6 +202,7 @@ export class ProcessChangeModel {
 		let sw = "1px";
 		let iconFill = 'none';
 		let iconPaths: string[] = [];
+		let iconStroke = 'black';
 		let swIcon = "1px";
 		if (element.type === BPMNNodeType.StartEvent || element.type === BPMNNodeType.IntermediateCatchEvent ||
 				element.type === BPMNNodeType.IntermediateThrowEvent) {
@@ -227,6 +232,7 @@ export class ProcessChangeModel {
 
 			iconPaths = BPMNEventDefinitionMappings.find(e => e.type === element.eventDefinition)?.iconPaths ?? [];
 			iconFill = element.type === BPMNNodeType.IntermediateThrowEvent || element.type === BPMNNodeType.EndEvent ? 'black' : 'none';
+			iconStroke = element.eventDefinition === EventDefinitionType.MessageEventDefinition && iconFill === 'black' ? 'white' : 'black';
 			
 			//timer clock
 			if (element.eventDefinition === EventDefinitionType.TimerEventDefinition) {
@@ -255,7 +261,7 @@ export class ProcessChangeModel {
 			}
 
 			for (const p of iconPaths) {
-				let pathElement = this.interactiveSVG.createPathByString('', false, false, p, 'fill: ' + iconFill + '; stroke: black; stroke-width: "2px";', "styler");
+				let pathElement = this.interactiveSVG.createPathByString('', false, false, p, 'fill: ' + iconFill + '; stroke: ' + iconStroke + '; stroke-width: "2px";', "styler");
 				this.interactiveSVG.applySVGMatrixTransformations(pathElement, -element.diagramShape.width/2, -element.diagramShape.height/2, 0, 1);
 				elementslist.push(pathElement);
 			}

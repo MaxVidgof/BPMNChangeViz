@@ -269,9 +269,16 @@ export class InteractiveSVG {
 		this.matrixGroup.appendChild(element);
 
 		if (recalculateSVGViewFit) {
-			const rect = (this.matrixGroup as SVGGraphicsElement).getBBox();
-			this.svgContainer.setAttributeNS(null, "viewBox", (rect.x - 20) + " " + (rect.y - 20) + " " + (rect.width + 40) + " " + (rect.height + 40))
+			this.recalculateViewFit();
 		}
+	}
+
+	//this alone does not update the rendering.
+	//TODO: find a way to recalc view fit on its own.
+	//not even appendchild makes it update.
+	public recalculateViewFit(): void {
+		const rect = (this.matrixGroup as SVGGraphicsElement).getBBox();
+		this.svgContainer.setAttributeNS(null, "viewBox", (rect.x - 20) + " " + (rect.y - 20) + " " + (rect.width + 40) + " " + (rect.height + 40))
 	}
 
 	public switchOrderOfTwoElements(element1: SVGElement | null, element2: SVGElement | null): boolean {
