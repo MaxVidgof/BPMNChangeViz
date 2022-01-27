@@ -430,7 +430,7 @@ export class InteractiveSVG {
 		element.setAttributeNS(null, "id", id);
 		let className = classNames;
 		className += dragHandleForParent && className.indexOf("drag-handle-parent")<0 ? " drag-handle-parent": "";
-		className += draggable && className.indexOf("draggable")<0 ? " draggable": "";
+		//className += draggable && className.indexOf("draggable")<0 ? " draggable": "";	//disable draggable for now. But can be a thing in the future.
 		if (element.tagName === 'path') {
 			className += " path";
 		}
