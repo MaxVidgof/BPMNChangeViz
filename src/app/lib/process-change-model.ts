@@ -11,6 +11,7 @@ import { ColoredMarker, InteractiveSVG, SVGUIButton } from "./interactive-svg";
 import {findBestMatch, compareTwoStrings} from "string-similarity"
 
 import * as cloneDeep from 'lodash.clonedeep';
+import { post } from "jquery";
 
 /**
  * This data model holds information about a process.
@@ -75,7 +76,6 @@ export class ProcessChangeModel {
 			//new SVGUIButton('', 'Select Single', 'fill: #007bbf; pointer: cursor;', () => {}, () => {}, () => {})
 		]);
 		this.moddleObj = moddleObj;
-
 	}
 
 	/**
@@ -175,7 +175,7 @@ export class ProcessChangeModel {
 			}
 		}
 
-		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
+		let elementslist: (SVGElement | SVGPathElement)[] = [
 			this.interactiveSVG.createPathByWaypoints("", false, false,
 				element.diagramShape.waypoints, false, styleStr, "styler"),
 			this.interactiveSVG.createImageObject('', false, false, ElementChangeIconsMapping.get(element.getChangeType()) ?? '', {
@@ -183,7 +183,25 @@ export class ProcessChangeModel {
 				y: icondestination.y - 10,
 				width: 20, height: 20
 			}, '', 'change-icon')
+		];
+
+		//put text below
+		//the question is always where to put the text for a sequqnce flow.
+		//for sake of simplicity, put the text in the middle between the first 2 waypoints.
+		let textpos = {
+			x: element.diagramShape.waypoints[0].x + (element.diagramShape.waypoints[1].x - element.diagramShape.waypoints[0].x) / 2,
+			y: element.diagramShape.waypoints[0].y + (element.diagramShape.waypoints[1].y - element.diagramShape.waypoints[0].y) / 2
+		}; 
+		elementslist.push(
+			this.interactiveSVG.createGroupOfTextlines('', false, false, textpos.x, textpos.y, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
 		);
+
+		
+
+		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
+			...elementslist
+		);
+
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, 0, 0, 0, 1.0);
 		return correspondingSVGElement;	
 	}
@@ -266,6 +284,11 @@ export class ProcessChangeModel {
 				elementslist.push(pathElement);
 			}
 		}
+
+		//put text below
+		elementslist.push(
+			this.interactiveSVG.createGroupOfTextlines('', false, false, 0, element.diagramShape.height*0.75, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
+		);
 
 		//at last push the change icon on top
 		elementslist.push(
@@ -358,10 +381,31 @@ export class ProcessChangeModel {
 		//if the element has older descriptions, show them as strike-through.
 		//therefore we need to set the styles of the textlines individually.
 		let textlines = element.description.split(/[\r\n]/);
-		let textstyles: string | string[] = 'stroke: black; font-size: 9px; stroke-width: "1px";';
+		let textstyles: string[] = ['stroke: black; font-size: 9px; stroke-width: "1px";'];
 		if (element.descriptionBeforeChangeHappened.length > 0) {
 			textlines = [...element.descriptionBeforeChangeHappened.split(/[\r\n]/), ...element.description.split(/[\r\n]/)];
 			textstyles = textlines.map<string>((st, index, arr) => 'stroke: black; font-size: 8px; stroke-width: "0.6px";' + (index < element.descriptionBeforeChangeHappened.split(/[\r\n]/).length ? ' text-decoration: line-through;' : ''))
+		}
+
+		//loop through the textlines and wrap every line thats longer than x characters.
+		let maxCharactersPerLine = 15;
+		for (let i=0; i<textlines.length; i++) {
+			if (textlines[i].length > maxCharactersPerLine) {
+				let posToWrap = textlines[i].substring(0, maxCharactersPerLine).lastIndexOf(' ');
+				if (posToWrap < 0) {
+					posToWrap = maxCharactersPerLine;
+				}
+
+				let rest = textlines[i].substring(posToWrap).trim();
+				textlines[i] = textlines[i].substring(0, posToWrap).trim();
+				if (i+1 >= textlines.length) {
+					textlines.push(rest);
+					textstyles.push(textstyles[i]);
+				} else {
+					textlines = textlines.splice(i+1, 0, rest);
+					textstyles = textstyles.splice(i+1, 0, textstyles[i]);
+				}
+			}
 		}
 
 		let elementsInGroup: (SVGElement | SVGPathElement)[] = [
@@ -400,7 +444,8 @@ export class ProcessChangeModel {
 		//adjust style
 		let pathIcons = BPMNNodeTypeMappings.find(m => m.type === element.type)?.iconPaths ?? [];
 
-		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
+
+		let elementslist: (SVGPathElement | SVGImageElement | SVGElement)[] = [
 			this.interactiveSVG.createRotSquare('', false, false, 0, 0, element.diagramShape.width /2, 'stroke: black; stroke-width: 2px; fill: white; fill-opacity: 0.95;', "styler"),
 			...pathIcons.map(icon => this.interactiveSVG.createPathByString('', false, false, icon, 'fill: black; stroke: black; stroke-width: 1px;', "styler")),
 			this.interactiveSVG.createRectangle(element.id + "_bg", true, true, 0, 0, element.diagramShape.width, element.diagramShape.height, 'fill: none; stroke: none;', ""),
@@ -409,7 +454,19 @@ export class ProcessChangeModel {
 				y: -element.diagramShape.height * (1/10),
 				width: 35, height: 35
 			}, '', 'change-icon')
+		];
+
+		
+		//put text below
+		elementslist.push(
+			this.interactiveSVG.createGroupOfTextlines('', false, false, element.diagramShape.width/2, element.diagramShape.height*1.2, element.description.split(/[\r\n]/), 'stroke: black; font-size: 10px', 0, "styler"),
 		);
+
+
+		let correspondingSVGElement = this.interactiveSVG.createSVGGroup(element.id, true,
+			...elementslist
+		);
+
 		this.interactiveSVG.applySVGMatrixTransformations(correspondingSVGElement, element.diagramShape.x, element.diagramShape.y, 0, 1);
 
 		return correspondingSVGElement;					
@@ -631,7 +688,7 @@ export class ProcessChangeModel {
 		let trafficChange: {id: string, trafficDelta: number}[] = [];
 
 		// use a blacklist to kick out information we dont want to export.
-		let blacklistProperties = ['inputs', 'outputs', 'input', 'output', 'svg', 'descriptionBeforeChangeHappened', 'diagramShape', 'changeType'];
+		let blacklistProperties = ['inputs', 'outputs', 'input', 'output', 'svg', 'diagramShape', 'changeType'];
 
 		//go through added and removed elements. Because here we have to push the whole object as delta info.
 		for(const el of this.elements.filter(e => e.getChangeType() === ElementChangeType.Added || e.getChangeType() === ElementChangeType.Removed)) {

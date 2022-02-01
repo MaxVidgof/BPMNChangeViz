@@ -109,7 +109,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 				if (el.$type === 'bpmn:SequenceFlow' || el.$type === 'bpmn:MessageFlow') {
 					const typ = el.$type === 'bpmn:SequenceFlow' ? BPMNEdgeType.SequenceFlow : BPMNEdgeType.MessageFlow;
 					toAdd = new BPMNEdge(el.id, typ);
-
+					(toAdd as BPMNEdge).description = el.name ?? '';
 
 					//waypoints are absolute in bpmn-js
 					(toAdd as BPMNEdge).diagramShape.waypoints = corrDiaElement.waypoint;
