@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
@@ -47,6 +47,8 @@
     "karma-jasmine-html-reporter": "~1.7.0",
     "typedoc": "^0.22.10",
     "typescript": "~4.4.3",
-    "vis-network": "^9.1.0"
+    "vis-network": "^9.1.0",
+    "vis-data":"^7.1.2",
+    "keycharm":"^0.4.0"
   }
 }
