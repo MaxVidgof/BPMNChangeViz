@@ -73,7 +73,7 @@ export class ChangeVisComponent implements OnInit, OnDestroy {
 
 			const corrDiagramElements = moddle.rootElement.get('diagrams')[0].plane.planeElement;
 
-			const pcm = new ProcessChangeModel('AwesomeProcess', svgContainer, moddle);
+			const pcm = new ProcessChangeModel('ProcessChangeModel', svgContainer, moddle);
 
 			//create a promise to store actions we want to execute later.
 			let stuffTodoAfterElementsWereAdded: (() => Promise<void>)[] = [];

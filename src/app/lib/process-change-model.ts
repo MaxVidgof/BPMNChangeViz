@@ -114,7 +114,7 @@ export class ProcessChangeModel {
 						element.type === BPMNNodeType.ScriptTask || element.type === BPMNNodeType.CallActivity || element.type === BPMNNodeType.BusinessRuleTask ||
 						element.type === BPMNNodeType.StandardLoopTask || element.type === BPMNNodeType.MultiInstanceLoopTaskVertical || element.type === BPMNNodeType.MultiInstanceLoopTaskHorizontal) {
 				correspondingSVGElement = this.createRectangleActivityShape(element);
-			} else if(element.type === BPMNNodeType.GatewayAND || element.type === BPMNNodeType.GatewayOR || element.type === BPMNNodeType.EventBasedGateway || element.type === BPMNNodeType.ComplexGateway) {
+			} else if(element.type === BPMNNodeType.GatewayAND || element.type === BPMNNodeType.GatewayXOR || element.type === BPMNNodeType.GatewayOR  || element.type === BPMNNodeType.EventBasedGateway || element.type === BPMNNodeType.ComplexGateway) {
 				correspondingSVGElement = this.createRotSquareGateShape(element);
 			}else {
 				// ?
@@ -456,6 +456,15 @@ export class ProcessChangeModel {
 			}, '', 'change-icon')
 		];
 
+
+		if (element.type === BPMNNodeType.GatewayOR) {
+			elementslist.push(
+				this.interactiveSVG.createCircle('', false, false, 25, 25,
+				element.diagramShape.width / 4 + 0.5,
+				'fill: none; stroke: black; stroke-width: 1px;', "styler"),
+			);
+		} 
+
 		
 		//put text below
 		elementslist.push(
@@ -790,7 +799,7 @@ export class ProcessChangeModel {
 			let shape = 'rect';
 			if ((el as BPMNNode).type === BPMNNodeType.StartEvent || (el as BPMNNode).type === BPMNNodeType.EndEvent) {
 				shape = 'circle';
-			} else if ((el as BPMNNode).type === BPMNNodeType.GatewayOR || (el as BPMNNode).type === BPMNNodeType.ComplexGateway ||
+			} else if ((el as BPMNNode).type === BPMNNodeType.GatewayXOR || (el as BPMNNode).type === BPMNNodeType.GatewayOR || (el as BPMNNode).type === BPMNNodeType.ComplexGateway ||
 			(el as BPMNNode).type === BPMNNodeType.EventBasedGateway || (el as BPMNNode).type === BPMNNodeType.GatewayAND) {
 				shape = 'diamond';
 			}
@@ -920,6 +929,7 @@ export enum BPMNNodeType {
 	"MultiInstanceLoopTaskVertical" = "MultiInstanceLoopTaskVertical",
 
 	"GatewayAND" = "GatewayAND",
+	"GatewayXOR" = "GatewayXOR",
 	"GatewayOR" = "GatewayOR",
 	"ComplexGateway" = "ComplexGateway",
 	"EventBasedGateway" = "EventBAsedGateway",
@@ -936,7 +946,8 @@ export const BPMNNodeTypeMappings: BPMNNodeTypeEntry[] = [
 	{bpmnIoType: 'bpmn:EndEvent', type: BPMNNodeType.EndEvent, iconPaths: ['']},
 	{bpmnIoType: 'bpmn:IntermediateThrowEvent', type: BPMNNodeType.IntermediateThrowEvent, iconPaths: ['']},
 	{bpmnIoType: 'bpmn:IntermediateCatchEvent', type: BPMNNodeType.IntermediateCatchEvent, iconPaths: ['']},
-	{bpmnIoType: 'bpmn:ExclusiveGateway', type: BPMNNodeType.GatewayOR, iconPaths: ['m 16,15 7.42857142857143,9.714285714285715 -7.42857142857143,9.714285714285715 3.428571428571429,0 5.714285714285715,-7.464228571428572 5.714285714285715,7.464228571428572 3.428571428571429,0 -7.42857142857143,-9.714285714285715 7.42857142857143,-9.714285714285715 -3.428571428571429,0 -5.714285714285715,7.464228571428572 -5.714285714285715,-7.464228571428572 -3.428571428571429,0 z']},
+	{bpmnIoType: 'bpmn:ExclusiveGateway', type: BPMNNodeType.GatewayXOR, iconPaths: ['m 16,15 7.42857142857143,9.714285714285715 -7.42857142857143,9.714285714285715 3.428571428571429,0 5.714285714285715,-7.464228571428572 5.714285714285715,7.464228571428572 3.428571428571429,0 -7.42857142857143,-9.714285714285715 7.42857142857143,-9.714285714285715 -3.428571428571429,0 -5.714285714285715,7.464228571428572 -5.714285714285715,-7.464228571428572 -3.428571428571429,0 z']},
+	{bpmnIoType: 'bpmn:InclusiveGateway', type: BPMNNodeType.GatewayOR, iconPaths: ['']},
 	{bpmnIoType: 'bpmn:ParallelGateway', type: BPMNNodeType.GatewayAND, iconPaths: ['m 23,10 0,12.5 -12.5,0 0,5 12.5,0 0,12.5 5,0 0,-12.5 12.5,0 0,-5 -12.5,0 0,-12.5 -5,0 z']},
 	{bpmnIoType: 'bpmn:ComplexGateway', type: BPMNNodeType.ComplexGateway, iconPaths: ['m 23,13 0,7.116788321167883 -5.018248175182482,-5.018248175182482 -3.102189781021898,3.102189781021898 5.018248175182482,5.018248175182482 -7.116788321167883,0 0,4.37956204379562 7.116788321167883,0  -5.018248175182482,5.018248175182482 l 3.102189781021898,3.102189781021898 5.018248175182482,-5.018248175182482 0,7.116788321167883 4.37956204379562,0 0,-7.116788321167883 5.018248175182482,5.018248175182482 3.102189781021898,-3.102189781021898 -5.018248175182482,-5.018248175182482 7.116788321167883,0 0,-4.37956204379562 -7.116788321167883,0 5.018248175182482,-5.018248175182482 -3.102189781021898,-3.102189781021898 -5.018248175182482,5.018248175182482 0,-7.116788321167883 -4.37956204379562,0 z']},
 	{bpmnIoType: 'bpmn:EventBasedGateway', type: BPMNNodeType.EventBasedGateway, iconPaths: ['m 18,22 7.363636363636364,-4.909090909090909 7.363636363636364,4.909090909090909 -2.4545454545454546,9.818181818181818 -9.818181818181818,0 z']},
